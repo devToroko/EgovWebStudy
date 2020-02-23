@@ -1,12 +1,17 @@
 package egovframework.sample.service.impl;
 
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
 import egovframework.sample.service.SampleDAO;
 import egovframework.sample.service.SampleService;
 
+@Service("sampleService")
 public class SampleServiceImpl implements SampleService {
 	
+	@Resource
 	private SampleDAO sampleDAO;
-	private String sampleString;
 	
 	public SampleServiceImpl() {
 		System.out.println("===> SampleServiceImpl 생성");
@@ -21,18 +26,6 @@ public class SampleServiceImpl implements SampleService {
 		this.sampleDAO = sampleDAO;
 	}
 
-
-	public String getSampleString() {
-		return sampleString;
-	}
-
-
-	public void setSampleString(String sampleString) {
-		this.sampleString = sampleString;
-	}
-
-	
-	
 
 	public void insertSample() throws Exception {
 //		System.out.println("SampleService--Sample 등록");

@@ -1,7 +1,10 @@
 package egovframework.sample.service.impl;
 
+import org.springframework.stereotype.Repository;
+
 import egovframework.sample.service.SampleDAO;
 
+@Repository("daoJDBC")
 public class SampleDAOJDBC implements SampleDAO {
 
 	public SampleDAOJDBC() {
