@@ -2,6 +2,7 @@ package egovframework.sample.service.impl;
 
 import egovframework.sample.service.SampleDAO;
 
+//@Repository("daoMyBatis")
 public class SampleDAOMyBatis implements SampleDAO {
 
 	public SampleDAOMyBatis() {
