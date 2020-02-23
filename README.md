@@ -1016,7 +1016,189 @@ public class SampleServiceImpl implements SampleService {
 결국은 XML의 "내용"을 줄일 필요가 있다. 이것을 위해서 <strong>어노테이션을 통한 설정</strong>
 을 해야한다.
 
-### context 네임스페이스 추가
+### 컴포넌트 스캔
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75112618-d0fcf080-5688-11ea-9f54-53fe7d3558d2.png)
+
+<br><br>
+
+context-common.xml에 컴포넌트 스캔을 하도록 작성한다.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- <bean id="sampleService" class="egovframework.sample.service.impl.SampleServiceImpl">
+		<property name="sampleDAO" ref="jdbc"/>
+		<property name="sampleString" value="WOW"/>
+	</bean> -->
+	
+	<!-- 주석처리 -->
+	<!-- <bean id="jdbc" class="egovframework.sample.service.impl.SampleDAOJDBC"></bean>
+	<bean id="mybatis" class="egovframework.sample.service.impl.SampleDAOMyBatis"></bean> -->
+	
+	<context:component-scan base-package="egovframework">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+</beans>
+
+```
+
+### @Component 어노테이션
+
+```java
+package egovframework.sample.service.impl;
+
+import org.springframework.stereotype.Component;
+
+import egovframework.sample.service.SampleDAO;
+
+@Component //추가!
+public class SampleDAOJDBC implements SampleDAO {
+
+	public SampleDAOJDBC() {
+		System.out.println("===> SampleDAOJDBC 생성");
+	}
+	
+	/* 이하 생략 */
+}
+```
+
+<br><br>
+테스트 코드 작성
+
+```java
+package egovframework.sample.service;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+	public static void main(String[] args) throws Exception {
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-common.xml");
+		
+		//2. Spring 컨테이너로부터 SampleServiceImpl 객체를 Lookup 한다.
+		SampleDAO sampleDAO = (SampleDAO) container.getBean("sampleDAOJDBC");
+		sampleDAO.insertSample();
+		sampleDAO.selectSampleList();
+		
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+		
+	}
+}
+
+```
+
+<br><br>
+
+테스트 결과 <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/75112751-14a42a00-568a-11ea-9615-5f6b65c9ff66.png)
+
+<br><br>
+
+SampleDAOJDBC 객체를 검색(Lookup)할 때 적절한 아이디를 설정하고 싶으면 @Component 어노테이션에 다음과 같이 작성하면 된다.
+
+```java
+@Component("daoJDBC")
+public class SampleDAOJDBC implements SampleDAO { ~~ }
+```
+
+<br>
+
+이러고나서 lookup할 때 아이디를 "daoJDBC"를 주면 된다.
+
+
+### 어노테이션의 확장
+- @Service : 비즈니스 로직을 처리하는 Service 클래스
+- @Repository : 데이터베이스 연동을 처리하는 DAO 클래스
+- @Controller : 사용자 요청을 제어하는 Controller 클래스
+
+단순히 이름만 이쁘게 표현하려고 저렇게 만든게 아니다.
+@Controller 는 MVC 아키텍처에서 컨트롤러 객체로 인식하도록 해주며
+@Repository는 DB 연동 과정에서 발생하는 예외를 변환해주는 특별한 기능이 추가되어 있다.
+
+
+```java
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+
+@Repository("daoJDBC")
+public class SampleDAOJDBC implements SampleDAO { ~ }
+```
+
+<br><br><br>
+
+### 어노테이션을 이용한 의존성 주입
+스프링은 의존관계 역시 XML 설정이 아닌 어노테이션을 이용하여 관리할 수 있게 해준다.
+
+```java
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource // 해당 변수의 타입을 체크, 해당 타입의 객체를 컨테이너가 갖고 있으면 DI 해준다. 
+		// 없으면 NoSuchBeanDefinitionException!
+	private SampleDAO sampleDAO;
+	
+	// 이하 생략
+}
+```
+<br><br>
+
+테스트 코드를 다음과 같이 수정후 실행해보자.
+
+```java
+package egovframework.sample.service;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+	public static void main(String[] args) throws Exception {
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-common.xml");
+		
+		//2. Spring 컨테이너로부터 SampleServiceImpl 객체를 Lookup 한다.
+		SampleService sampleService = (SampleService) container.getBean("sampleService");
+		sampleService.insertSample();
+		sampleService.selectSampleList();
+		
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+		
+	}
+}
+```
+
+<br>
+
+
+테스트결과 <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/75112889-df004080-568b-11ea-8b2e-b7283e5b0002.png)
 
 
 <br><br>
+
+### @Resource 어노테이션의 name 속성 사용하기
+
+
+
+
