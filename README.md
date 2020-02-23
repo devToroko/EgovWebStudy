@@ -1200,5 +1200,59 @@ public class SampleServiceClient {
 ### @Resource 어노테이션의 name 속성 사용하기
 
 
+```java
+@Repository("daoMyBatis")
+public class SampleDAOMyBatis implements SampleDAO { ~~ }
 
+-------------------------------------------------------------
+
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource(name="daoMyBatis")
+	private SampleDAO sampleDAO;
+	//이하 생략
+}
+```
+
+<br><br>
+
+테스트 결과
+
+![image](https://user-images.githubusercontent.com/51431766/75113360-a9aa2180-5690-11ea-8928-2e69479429ae.png)
+
+<br><br>
+
+### 어노테이션과 XML 병행하여 사용하기
+어노테이션 덕분에 XML이 많이 축소되었지만, 의존관계가 변경되면 Java 소스를 건드려야한다.
+이런 점을 감안하여 XML 설정과 어노테이션을 적절히 섞어서 써야한다.
+
+- SampleServiceImpl 에 @Resource 어노테이션에 name 속성 제거
+- SampleDAOJDBC , SampleDAOMyBatis 클래스 위에 선언된 어노테이션들은 모두 삭제하거 주석처리한다.
+- context-common.xml 수정
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<context:component-scan base-package="egovframework">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<bean class="egovframework.sample.service.impl.SampleDAOJDBC" />
+</beans>
+```
+
+
+
+그럼 어떤 기준으로 XML 과 어노테이션을 사용해야할까?
+정해지진 않았지만 일반적으로 유지보수 과정에서 변경이 발생되는 클래스들은 
+실제로 사용할 클래스 하나만 \<bean\> 등록한다. 그리고 변경이 발생되지 않는 클래스들은
+어노테이션으로 처리하면 된다.
 
