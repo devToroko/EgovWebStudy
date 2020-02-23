@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="sampleService" class="egovframework.sample.service.impl.SampleServiceImpl">
+		<property name="sampleDAO" ref="jdbc"/>
+		<property name="sampleString" value="WOW"/>
+	</bean>
+	
+	<bean id="jdbc" class="egovframework.sample.service.impl.SampleDAOJDBC"></bean>
+	<bean id="mybatis" class="egovframework.sample.service.impl.SampleDAOMyBatis"></bean>
+</beans>
