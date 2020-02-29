@@ -1256,3 +1256,29 @@ public class SampleServiceImpl implements SampleService {
 실제로 사용할 클래스 하나만 \<bean\> 등록한다. 그리고 변경이 발생되지 않는 클래스들은
 어노테이션으로 처리하면 된다.
 
+<br><br><br>
+
+
+# 데이터베이스 연동
+
+![image](https://user-images.githubusercontent.com/51431766/75603710-75ad8100-5b14-11ea-9dbd-c8e3170f7298.png)
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75603723-9249b900-5b14-11ea-9712-985cd6c82d3e.png)
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75603691-44cd4c00-5b14-11ea-929d-a2a5b0bc5ebb.png)
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75603735-c1f8c100-5b14-11ea-83c8-9c2c01ba51ea.png)
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75603761-f40a2300-5b14-11ea-8fce-3a6eb7ca0c68.png)
+
+드래그해서 sql을 선택 후  alt + x 를 눌러서 실행한다.
+
+
