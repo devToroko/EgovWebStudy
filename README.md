@@ -1261,24 +1261,315 @@ public class SampleServiceImpl implements SampleService {
 
 # 데이터베이스 연동
 
+<br><br>
+
 ![image](https://user-images.githubusercontent.com/51431766/75603710-75ad8100-5b14-11ea-9dbd-c8e3170f7298.png)
 
-<br>
+<br><br>
+
+pom.xml 작성 <br>
 
 ![image](https://user-images.githubusercontent.com/51431766/75603723-9249b900-5b14-11ea-9712-985cd6c82d3e.png)
 
-<br>
+<br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/75603691-44cd4c00-5b14-11ea-929d-a2a5b0bc5ebb.png)
 
-<br>
+<br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/75603735-c1f8c100-5b14-11ea-83c8-9c2c01ba51ea.png)
 
-<br>
+<br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/75603761-f40a2300-5b14-11ea-8fce-3a6eb7ca0c68.png)
 
 드래그해서 sql을 선택 후  alt + x 를 눌러서 실행한다.
+
+<br><br>
+
+결과: <br>
+![image](https://user-images.githubusercontent.com/51431766/75603786-2025a400-5b15-11ea-903d-5c0561588de9.png)
+
+
+## VO 클래스 만들기
+
+<br><br>
+
+```java
+package egovframework.sample.service;
+
+import java.sql.Date;
+
+public class SampleVO {
+	private int id;
+	private String title;
+	private String regUser;
+	private String content;
+	private Date regDate;
+	
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	public String getRegUser() {
+		return regUser;
+	}
+	public void setRegUser(String regUser) {
+		this.regUser = regUser;
+	}
+	public String getContent() {
+		return content;
+	}
+	public void setContent(String content) {
+		this.content = content;
+	}
+	public Date getRegDate() {
+		return regDate;
+	}
+	public void setRegDate(Date regDate) {
+		this.regDate = regDate;
+	}
+	
+	@Override
+	public String toString() {
+		return "SampleVO [id=" + id + ", title=" + title + ", regUser=" + regUser + ", content=" + content
+				+ ", regDate=" + regDate + "]";
+	}	
+}
+```
+
+<br><br><br>
+
+### VO 클래스 적용하기
+
+<br><br>
+
+SampleVO를 이용하는 비즈니스 컴포넌트의 인터페이스와 구현 클래스를 각각 수정한다.
+==> 인터페이스: SampleService, SampleDAO
+==> 구현 클래스: SampleServiceImpl, SampleDAOJDBC, SampleDAOMyBatis
+
+<br><br>
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+public interface SampleDAO {
+
+	void insertSample(SampleVO vo) throws Exception;
+
+	void updateSample(SampleVO vo) throws Exception;
+
+	void deleteSample(SampleVO vo) throws Exception;
+
+	SampleVO selectSample(SampleVO vo) throws Exception;
+
+	List<SampleVO> selectSampleList(SampleVO vo) throws Exception;
+
+}
+```
+
+<br><br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+@Repository("daoJDBC")  // 다시 추가, 전자정부표준프레임워크와 비슷하게 만들기 위해서다.
+public class SampleDAOJDBC implements SampleDAO {
+
+	public SampleDAOJDBC() {
+		System.out.println("===> SampleDAOJDBC 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로 insertSample() 기능처리 등록");
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  updateSample() 기능처리 수정");
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  deleteSample() 기능처리 삭제");
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  selectSample() 기능처리 상세 조회");
+		return null;
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  selectSampleList() 기능처리 목록 검색");
+		return null;
+	}
+	
+}
+
+```
+
+<br><br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+@Repository("daoMyBatis") // 다시 추가, 전자정부표준프레임워크와 비슷하게 만들기 위해서다.
+public class SampleDAOMyBatis implements SampleDAO {
+
+	public SampleDAOMyBatis() {
+		System.out.println("===> SampleDAOMyBatis 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("MyBatis로 insertSample() 기능처리 등록");
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("MyBatis로  updateSample() 기능처리 수정");
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("MyBatis로  deleteSample() 기능처리 삭제");
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("MyBatis로  selectSample() 기능처리 상세 조회");
+		return null;
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("MyBatis로  selectSampleList() 기능처리 목록 검색");
+		return null;
+	}
+}
+
+```
+
+
+<br><br>
+다시 @Resource를 씀으로 context-common.xml 수정.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<context:component-scan base-package="egovframework">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<!-- <bean class="egovframework.sample.service.impl.SampleDAOJDBC" /> -->
+</beans>
+```
+
+
+<br><br>
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+public interface SampleService {
+
+	void insertSample(SampleVO vo) throws Exception;
+
+	void updateSample(SampleVO vo) throws Exception;
+
+	void deleteSample(SampleVO vo) throws Exception;
+
+	SampleVO selectSample(SampleVO vo) throws Exception;
+
+	List<SampleVO> selectSampleList(SampleVO vo) throws Exception;
+	
+}
+```
+
+<br><br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleService;
+import egovframework.sample.service.SampleVO;
+
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource(name="daoJDBC")
+	private SampleDAO sampleDAO;
+	
+	public SampleServiceImpl() {
+		System.out.println("===> SampleServiceImpl 생성");
+	}
+	
+	public SampleDAO getSampleDAO() {
+		return sampleDAO;
+	}
+
+
+	public void setSampleDAO(SampleDAO sampleDAO) {
+		this.sampleDAO = sampleDAO;
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		sampleDAO.insertSample(vo);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		sampleDAO.updateSample(vo);
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		sampleDAO.deleteSample(vo);
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		sampleDAO.selectSample(vo);
+		return null;
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		sampleDAO.selectSampleList(vo);
+		return null;
+	}
+	
+}
+```
+
+
 
 
