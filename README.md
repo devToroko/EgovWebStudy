@@ -1358,6 +1358,9 @@ SampleVO를 이용하는 비즈니스 컴포넌트의 인터페이스와 구현 
 
 <br><br>
 
+#### SampleDAO.java 
+<br>
+
 ```java
 package egovframework.sample.service;
 
@@ -1379,6 +1382,9 @@ public interface SampleDAO {
 ```
 
 <br><br>
+
+#### SampleDAOJDBC.java 
+<br>
 
 ```java
 package egovframework.sample.service.impl;
@@ -1424,6 +1430,9 @@ public class SampleDAOJDBC implements SampleDAO {
 ```
 
 <br><br>
+
+#### SampleDAOMyBatis.java 
+<br>
 
 ```java
 package egovframework.sample.service.impl;
@@ -1471,6 +1480,10 @@ public class SampleDAOMyBatis implements SampleDAO {
 <br><br>
 다시 @Resource를 씀으로 context-common.xml 수정.
 
+
+#### context-common.xml
+<br>
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -1512,6 +1525,10 @@ public interface SampleService {
 ```
 
 <br><br>
+
+
+#### SampleServiceImpl.java 
+<br>
 
 ```java
 package egovframework.sample.service.impl;
