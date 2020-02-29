@@ -1504,6 +1504,12 @@ public class SampleDAOMyBatis implements SampleDAO {
 
 <br><br>
 
+
+
+#### SampleService.java 
+<br>
+
+
 ```java
 package egovframework.sample.service;
 
@@ -1589,4 +1595,317 @@ public class SampleServiceImpl implements SampleService {
 
 
 
+#### SampleServiceClient.java 
+테스트 코드 수정
+<br>
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+	private static final Log LOGGER = LogFactory.getLog(SampleServiceClient.class);
+	
+	public static void main(String[] args) throws Exception {
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-common.xml");
+		
+		//2. Spring 컨테이너로부터 SampleService 타입의 객체를 Lookup 한다.
+		SampleService sampleService = (SampleService) container.getBean("sampleService");
+		
+		SampleVO vo = new SampleVO();
+		vo.setTitle("임시 제목");
+		vo.setRegUser("테스트");
+		vo.setContent("임시 내용입니다....");
+		sampleService.insertSample(vo);
+		
+		List<SampleVO> sampleList = sampleService.selectSampleList(vo);
+		System.out.println("[ Sample List ]");
+		sampleList.forEach(sample->System.out.println(sample));
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+		LOGGER.info("done");
+		
+	}
+}
+```
+<br>
+
+하지만 실행해도 현재 List를 읽어왔을 때 null이기 때문에 예외가 날라온다.
+
+
+## DAO 클래스 구현
+
+먼저 DAO클래스에서 공통으로 사용할 JDBCUtil 클래스를 만든다.
+
+<br>
+패키지 <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75604218-dd19ff80-5b19-11ea-995c-fe0576b1eadb.png)
+
+<br><br>
+
+### JDBCUtil
+
+```java
+package egovframework.sample.service.common;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class JDBCUtil {
+	
+	public static Connection getConnection() {
+		
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			return DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe","book_ex3","book_ex3");
+		} catch (SQLException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	public static void close(Statement pstmt, Connection conn) {
+		try {
+			if(pstmt != null) {
+				pstmt.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			pstmt = null;
+		}
+	
+		try {
+			if(!conn.isClosed() || conn != null) {
+				conn.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			conn = null;
+		}
+	}
+	
+	public static void close(ResultSet rs, Statement pstmt, Connection conn) {
+		
+		try {
+			if(rs!=null) {rs.close();}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			rs = null;
+		}
+		
+		
+		try {
+			if(pstmt != null) {
+				pstmt.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			pstmt = null;
+		}
+	
+		try {
+			if(!conn.isClosed() || conn != null) {
+				conn.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			conn = null;
+		}
+		
+	}
+}
+```
+
+<br><br>
+
+#### SampleDAOJDBC
+
+```java
+package egovframework.sample.service.impl;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.common.JDBCUtil;
+
+@Repository("daoJDBC")
+public class SampleDAOJDBC implements SampleDAO {
+	
+	// JDBC 관련 변수
+	private Connection conn;
+	private PreparedStatement pstmt;
+	private ResultSet rs;
+
+	// SQL 명령어들
+	private final String SAMPLE_INSERT = "INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) VALUES "
+			+ "(( SELECT NVL(MAX(ID),0) + 1 FROM SAMPLE), ?, ?, ?, SYSDATE)";
+	
+	private final String SAMPLE_UPDATE = "UPDATE SAMPLE SET TITLE=?, REG_USER=?, CONTENT=? WHERE ID=?";
+	private final String SAMPLE_DELETE = "DELETE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_GET = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_LIST = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE ORDER BY REG_DATE DESC";
+		
+	public SampleDAOJDBC() {
+		System.out.println("===> SampleDAOJDBC 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로 insertSample() 기능처리 등록");
+		conn = JDBCUtil.getConnection();
+		pstmt = conn.prepareStatement(SAMPLE_INSERT);
+		pstmt.setString(1, vo.getTitle());
+		pstmt.setString(2, vo.getRegUser());
+		pstmt.setString(3, vo.getContent());
+		pstmt.executeUpdate();
+		JDBCUtil.close(pstmt, conn);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  updateSample() 기능처리 수정");
+		conn = JDBCUtil.getConnection();
+		pstmt = conn.prepareStatement(SAMPLE_UPDATE);
+		pstmt.setString(1, vo.getTitle());
+		pstmt.setString(2, vo.getRegUser());
+		pstmt.setString(3, vo.getContent());
+		pstmt.setInt(4, vo.getId());
+		pstmt.executeUpdate();
+		JDBCUtil.close(pstmt, conn);
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  deleteSample() 기능처리 삭제");
+		conn = JDBCUtil.getConnection();
+		pstmt = conn.prepareStatement(SAMPLE_DELETE);
+		pstmt.setInt(1, vo.getId());
+		pstmt.executeUpdate();
+		JDBCUtil.close(pstmt, conn);
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  selectSample() 기능처리 상세 조회");
+		SampleVO sample = null;
+		conn = JDBCUtil.getConnection();
+		pstmt = conn.prepareStatement(SAMPLE_GET);
+		pstmt.setInt(1, vo.getId());
+		rs = pstmt.executeQuery();
+		
+		if(rs.next()) {
+			sample = new SampleVO();
+			sample.setId(rs.getInt("ID"));
+			sample.setTitle(rs.getString("TITLE"));
+			sample.setRegUser(rs.getString("REG_USER"));
+			sample.setContent(rs.getString("CONTENT"));
+			sample.setRegDate(rs.getDate("REG_DATE"));
+		}
+		JDBCUtil.close(rs,pstmt, conn);
+		return sample;
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  selectSampleList() 기능처리 목록 검색");
+		List<SampleVO> sampleList = new ArrayList<SampleVO>();
+		conn = JDBCUtil.getConnection();
+		pstmt = conn.prepareStatement(SAMPLE_LIST);
+		rs = pstmt.executeQuery();
+		while(rs.next()) {
+			SampleVO sample = new SampleVO();
+			sample.setId(rs.getInt("ID"));
+			sample.setTitle(rs.getString("TITLE"));
+			sample.setRegUser(rs.getString("REG_USER"));
+			sample.setContent(rs.getString("CONTENT"));
+			sample.setRegDate(rs.getDate("REG_DATE"));
+			sampleList.add(sample);
+		}
+		JDBCUtil.close(rs,pstmt, conn);
+		return sampleList;
+	}
+	
+}
+```
+
+
+### SampleServiceImpl
+앞서 만든 SampleServiceImpl.java는 return 값들을 null로 줬다. 수정해주자.
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleService;
+import egovframework.sample.service.SampleVO;
+
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource(name="daoJDBC")
+	private SampleDAO sampleDAO;
+	
+	public SampleServiceImpl() {
+		System.out.println("===> SampleServiceImpl 생성");
+	}
+	
+	public SampleDAO getSampleDAO() {
+		return sampleDAO;
+	}
+
+
+	public void setSampleDAO(SampleDAO sampleDAO) {
+		this.sampleDAO = sampleDAO;
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		sampleDAO.insertSample(vo);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		sampleDAO.updateSample(vo);
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		sampleDAO.deleteSample(vo);
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		return sampleDAO.selectSample(vo);
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		return sampleDAO.selectSampleList(vo);
+	}
+	
+}
+```
 
