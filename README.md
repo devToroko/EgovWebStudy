@@ -1921,3 +1921,213 @@ public class SampleServiceImpl implements SampleService {
 
 ## 스프링 JDBC 
 
+위에서 JDBCUtil 이라는 클래스를 통해서 많은 에러를 없앴지만 여전히 반복 코드가 등장한다. <br>
+그런데 만약 데이터베이스 연동에 필요한 자바 코드를 누군가가 대신 처리해주고, 개발자는 실행되는 <br>
+SQL 구문만 집중적으로 관리한다면 개발과 유지보수는 훨씬 편해질것이다. <br><br>
+
+스프링은 JDBC 기반의 DB 연동 프로그램을 쉽게 개발할 수 있도록 <strong>JdbcTemplate</strong> 클래스를 제공한다.
+
+<br><br><br>
+
+### 스프링 JDBC 설정
+
+<br><br>
+
+pom.xml 추가
+
+<br>
+
+```xml
+<dependency>
+    <groupId>commons-dbcp</groupId>
+    <artifactId>commons-dbcp</artifactId>
+    <version>1.4</version>
+</dependency>
+```
+
+<br><br>
+
+context-datasource.xml 추가
+
+<br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Oracle DataSource -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+		<property name="url" value="jdbc:oracle:thin:@127.0.0.1:1521:xe"/>
+		<property name="username" value="book_ex3"/>
+		<property name="password" value="book_ex3"/>
+	</bean>
+</beans>
+```
+
+<br><br>
+
+ SampleRowMapper 생성
+
+<br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.core.RowMapper;
+
+import egovframework.sample.service.SampleVO;
+
+public class SampleRowMapper implements RowMapper<SampleVO> {
+
+	@Override
+	public SampleVO mapRow(ResultSet rs, int rowNum) throws SQLException {
+		SampleVO sample = new SampleVO();
+		sample.setId(rs.getInt("ID"));
+		sample.setTitle(rs.getString("TITLE"));
+		sample.setRegUser(rs.getString("REG_USER"));
+		sample.setContent(rs.getString("CONTENT"));
+		sample.setRegDate(rs.getDate("REG_DATE"));
+		return sample;
+	}
+	
+}
+```
+
+<br><br>
+
+ context-common.xml 생성
+
+<br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+	
+
+	<context:component-scan base-package="egovframework">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<!-- <bean class="egovframework.sample.service.impl.SampleDAOJDBC" /> -->
+	
+	<!-- JdbcTemplate -->
+	<bean id="" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+</beans>
+```
+
+<br><br>
+
+SampleDAOSpring 생성
+
+<br>
+
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+
+@Repository("daoSpring")
+public class SampleDAOSpring implements SampleDAO {
+	
+	@Resource(name="jdbcTemplate")
+	private JdbcTemplate spring;
+	
+	// SQL 명령어들
+	private final String SAMPLE_INSERT = "INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) VALUES "
+			+ "(( SELECT NVL(MAX(ID),0) + 1 FROM SAMPLE), ?, ?, ?, SYSDATE)";
+	
+	private final String SAMPLE_UPDATE = "UPDATE SAMPLE SET TITLE=?, REG_USER=?, CONTENT=? WHERE ID=?";
+	private final String SAMPLE_DELETE = "DELETE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_GET = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_LIST = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE ORDER BY REG_DATE DESC";
+	
+	public SampleDAOSpring() {
+		System.out.println("===> SampleDAOSpring 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("Spring로 insertSample() 기능처리 등록");
+		Object[] args = {vo.getTitle(),vo.getRegUser(),vo.getContent()};
+		spring.update(SAMPLE_INSERT,args);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("Spring로  updateSample() 기능처리 수정");
+		Object[] args = {vo.getTitle(),vo.getRegUser(),vo.getContent(),vo.getId()};
+		spring.update(SAMPLE_UPDATE,args);
+	}
+	
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("Spring로  deleteSample() 기능처리 삭제");
+		spring.update(SAMPLE_DELETE,vo.getId());
+	}
+
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("Spring로  selectSample() 기능처리 상세 조회");
+		Object[] args = {vo.getId()};
+		return spring.queryForObject(SAMPLE_GET, args ,new SampleRowMapper());
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("Spring로  selectSampleList() 기능처리 목록 검색");
+		return spring.query(SAMPLE_LIST, new SampleRowMapper());
+	}	
+}
+```
+
+<br><br> 
+
+SampleServiceImpl 수정
+
+<br>
+
+```java
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource(name="daoSpring") // 수정
+	private SampleDAO sampleDAO;
+	
+	//이하 생략
+	
+}
+```
+
+<br><br> 
+
+SampleServiceClient 수정
+
+<br>
+
+```java
+AbstractApplicationContext container =  
+	new GenericXmlApplicationContext("egovframework/spring/context-*.xml");
+```
+
+<br><br> 
+
+결과: <br>
+![image](https://user-images.githubusercontent.com/51431766/75612840-bb953400-5b6a-11ea-82fb-ac940a06c417.png)
