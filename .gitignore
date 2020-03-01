@@ -16,3 +16,4 @@ buildNumber.properties
 *.log
 .classpath
 .springBeans
+m2e-wtp/
