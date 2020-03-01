@@ -2854,6 +2854,30 @@ Primary key를 단순히 숫자로 나타내는게 아니라 시퀀스나 서브
 
 ![image](https://user-images.githubusercontent.com/51431766/75627587-c73d3500-5c14-11ea-8b59-936de180cc8f.png)
 
+```sql
+--DROP TABLE SAMPLE;
+
+CREATE TABLE SAMPLE (
+	ID VARCHAR2(12) PRIMARY KEY,
+	TITLE VARCHAR2(200),
+	REG_USER VARCHAR2(20),
+	CONTENT VARCHAR2(2000),
+	REG_DATE DATE DEFAULT SYSDATE
+);
+
+INSERT INTO SAMPLE VALUES('SAMPLE-00001','JAVA Programming','관리자','JAVA 관련 글만 등록하세요.',SYSDATE);
+
+--DROP TABLE IDS;
+
+CREATE TABLE IDS(
+	TABLE_NAME VARCHAR2(16) PRIMARY KEY,
+	NEXT_ID NUMBER(30) NOT NULL
+);
+
+INSERT INTO IDS VALUES('SAMPLE',2);
+
+```
+
 (다 작성하고 드래그 해서 <code>Alt + x </code>를 누르면 SQL이 실행된다.
 
 <br><br>
