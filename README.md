@@ -2131,3 +2131,43 @@ AbstractApplicationContext container =
 
 결과: <br>
 ![image](https://user-images.githubusercontent.com/51431766/75612840-bb953400-5b6a-11ea-82fb-ac940a06c417.png)
+
+
+<br><br>
+
+
+# 스프링 AOP (Aspect Oriented Programming)
+
+<br><br>
+
+## AOP 개요
+
+<br>
+
+비즈니스 컴포넌트 개발에서 가장 중요한 두 가지 원칙은 낮은 결합도와 높은 응집도를 유지하는 것이다.
+스프링의 의존성 주입(DI) 덕분에 비즈니스 컴포넌트를 구성하는 객체들의 결합도를 떨어뜨릴 수 있어서 <br> 
+쉽게 <strong>변경</strong>이 가능했다. <br>
+스프링의 IoC 가 결합도와 관련된 기능이라면, 지금부터 살펴볼 AOP(Aspect Oriented Programming)는 <br>
+<strong>응집도</strong>와 관련되어 있다.
+
+<br><br>
+
+엔터프라이즈 애플리케이션은 무수히 많은 비즈니스 로직을 갖고 있다. 그리고 이런 비즈니스 로직에는 "부가적인 기능"을<br>
+위한 코드들이 매번 모든 비즈니스 로직에서 나오기 일수이다. 이런 코드들을 소홀히 해서는 안 된다. <br>
+이런 기능도 비즈니스 로직만큼이나 중요한 것이기 때문이다. 
+
+<br>
+
+AOP는 이렇게 부가적인 공통 코드들을 효율적으로 관리하는 것에 주목한다.
+
+<br>
+
+AOP 를 공부하면서 자주 나온느 단어가 있는데 아래와 같다. <br>
+- 횡단 관심사(Crosscutting Concerns) : 비즈니스 메소드마다 공통으로 등장하는 로깅이나 예외 로직 
+- 핵심 관심사(Core Concerns) : 사용자의 요청에 따라 실제로 수행되는 핵심 비즈니스 로직
+
+<br>
+
+## 스프링 AOP 설정
+
+
