@@ -1,55 +1,46 @@
 package egovframework.sample.service.impl;
 
+import java.util.List;
+
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Service;
 
 import egovframework.sample.service.SampleDAO;
 import egovframework.sample.service.SampleService;
+import egovframework.sample.service.SampleVO;
 
 @Service("sampleService")
 public class SampleServiceImpl implements SampleService {
 	
-	@Resource
+	@Resource(name="daoJDBC")
 	private SampleDAO sampleDAO;
 	
 	public SampleServiceImpl() {
 		System.out.println("===> SampleServiceImpl 생성");
 	}
 	
-	public SampleDAO getSampleDAO() {
-		return sampleDAO;
-	}
-
-
-	public void setSampleDAO(SampleDAO sampleDAO) {
-		this.sampleDAO = sampleDAO;
-	}
-
-
-	public void insertSample() throws Exception {
-//		System.out.println("SampleService--Sample 등록");
-		sampleDAO.insertSample();
+	public void insertSample(SampleVO vo) throws Exception {
+//		if(vo.getId() == 0 ) {
+//			throw new IllegalArgumentException("0번 아이디는 등록할 수 없습니다.");
+//		}
+		sampleDAO.insertSample(vo);
 	}
 	
-	public void updateSample() throws Exception {
-//		System.out.println("SampleService---Sample 수정");
-		sampleDAO.updateSample();
+	public void updateSample(SampleVO vo) throws Exception {
+		sampleDAO.updateSample(vo);
 	}
 	
-	public void deleteSample() throws Exception {
-//		System.out.println("SampleService---Sample 삭제");
-		sampleDAO.deleteSample();
+	public void deleteSample(SampleVO vo) throws Exception {
+		sampleDAO.deleteSample(vo);
 	}
 
-	public void selectSample() throws Exception {
-//		System.out.println("SampleService---Sample 상세 조회");
-		sampleDAO.selectSample();
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		return sampleDAO.selectSample(vo);
 	}
 	
-	public void selectSampleList() throws Exception {
-//		System.out.println("SampleService---Sample 목록 검색");
-		sampleDAO.selectSampleList();
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		return sampleDAO.selectSampleList(vo);
 	}
 	
 }

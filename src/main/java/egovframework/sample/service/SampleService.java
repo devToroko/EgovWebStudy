@@ -1,15 +1,17 @@
 package egovframework.sample.service;
 
+import java.util.List;
+
 public interface SampleService {
 
-	void insertSample() throws Exception;
+	void insertSample(SampleVO vo) throws Exception;
 
-	void updateSample() throws Exception;
+	void updateSample(SampleVO vo) throws Exception;
 
-	void deleteSample() throws Exception;
+	void deleteSample(SampleVO vo) throws Exception;
 
-	void selectSample() throws Exception;
+	SampleVO selectSample(SampleVO vo) throws Exception;
 
-	void selectSampleList() throws Exception;
+	List<SampleVO> selectSampleList(SampleVO vo) throws Exception;
 
 }
