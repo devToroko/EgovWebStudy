@@ -7,8 +7,11 @@ import org.springframework.context.support.GenericXmlApplicationContext;
 
 public class SampleServiceClient {
 	
+//	private static final Log LOGGER = LogFactory.getLog(SampleServiceClient.class); 
 	
 	public static void main(String[] args) throws Exception {
+		
+		
 		//1. 스프링 컨테이너를 구동한다
 		AbstractApplicationContext container =  
 				new GenericXmlApplicationContext("egovframework/spring/context-*.xml");

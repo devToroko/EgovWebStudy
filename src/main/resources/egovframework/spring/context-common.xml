@@ -5,7 +5,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
 	
-	<import resource="context-datasource.xml"/>
+	<!-- <import resource="context-datasource.xml"/> -->
 
 	<context:component-scan base-package="egovframework">
 		<context:exclude-filter type="annotation" 

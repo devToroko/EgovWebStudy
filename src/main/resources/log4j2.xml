@@ -13,7 +13,7 @@
         <Logger name="egovframework" level="INFO" additivity="false">
             <AppenderRef ref="console" />
         </Logger>
-        <Logger name="org.springframework" level="WARN" additivity="false">
+        <Logger name="org.springframework" level="INFO" additivity="false">
             <AppenderRef ref="console" />
         </Logger>
         <Root level="INFO">
