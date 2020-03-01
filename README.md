@@ -2427,3 +2427,154 @@ public class SampleAdvice {
 
 결과: <br>
 ![image](https://user-images.githubusercontent.com/51431766/75622001-da351280-5bde-11ea-9d2a-e4fd26674a4b.png)
+
+
+<br><br>
+
+## JoinPoint와 바인드 변수
+
+<br>
+
+AOP 의 기능들을 사용해서 공통된 로직을 처리하는 것도 좋지만, 해당 로직에 대한 정보 또한 알고 싶으면 <br>
+JoinPoint 인터페이스를 사용하면된다. JoinPoint에서 제공하는 융용한 메소드든 다음과 같다. <br>
+
+| 메소드                   	| 설명                                                                                           |
+|--------------------------	|--------------------------------------------------------------------------------------------------|
+| Signature getSignature() 	| 클라이언트가 호출한 메소드의 시그니처(반환형,이름,매개변수)<br>정보가 저장된 Signature 객체 반환 	|
+| Object getTarget()       	| 클라이언트가 호출한 비즈니스 메소드를 포함한 비즈니스<br>객체 반환                               	|
+| Object[] getArgs()       	| 클라이언트가 메소드를 호출할 때 넘겨준 인자 목록을 Object <br>배열로 반환                        |
+
+
+<br><br>
+
+그리고  getSignature() 가 반환하는 Signature 객체를 이용하면 다양한 정보를 얻을 수 있다.
+
+
+| 메소드                 	| 설명                                                                                   	|
+|------------------------	|----------------------------------------------------------------------------------------	|
+| String getName()       	| 클라이언트가 호출한 메서드 이름 반환                                                   	|
+| String toLongString()  	| 클라이언트가 호출한 메소드의 반환형, 이름, 매개변수를 패키지 경로까지 포함하여 반환 	|
+| String toShortString() 	| 클라이언트가 호출한 메소드 시그니처를 축약한 문자열로 반환                             	|
+
+<br><br>
+
+JoinPoint는 어드바이스의 종류에 따라 사용 방법이 다소 다르다. 상세하게 알아보자.
+
+
+---
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- 횡단 관심에 해당하는 Advice 등록  -->
+	<bean id="advice" class="egovframework.sample.service.common.SampleAdvice"></bean>
+	
+	<!-- AOP 설정 -->
+	<aop:config>
+		<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+		<aop:pointcut id="selectPointcut" expression="execution(* egovframework.sample..*Impl.select*(..))" />
+		<aop:aspect ref="advice">
+			<aop:before pointcut-ref="allPointcut" method="beforeLogic"/>
+			<aop:after-returning pointcut-ref="selectPointcut" method="afterReturningLogic" returning="returnObj"/>
+			<aop:after-throwing pointcut-ref="allPointcut" method="afterThrowingLogic" throwing="exceptObj"/>
+			<aop:after pointcut-ref="allPointcut" method="afterLogic"/>
+			<aop:around pointcut-ref="allPointcut" method="aroundLogic" />
+		</aop:aspect>
+	</aop:config>
+	
+</beans>
+
+```
+
+<br><br>
+
+```java
+package egovframework.sample.service.common;
+
+import java.sql.SQLException;
+import java.util.List;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.util.StopWatch;
+
+import egovframework.sample.service.SampleVO;
+
+public class SampleAdvice {
+	
+	public void beforeLogic(JoinPoint jp) {
+		String method = jp.getSignature().getName();
+		Object[] args = jp.getArgs();
+		
+		System.out.println("[사전 처리] "+method+"() 메소드 ARGS 정보 : "+args[0].toString());
+	}
+	
+	public void afterLogic() {
+		System.out.println("[사후 처리] 비즈니스 로직 수행 후 무조건 동작");
+	}
+	
+	public void afterReturningLogic(JoinPoint jp, Object returnObj) {
+		String method = jp.getSignature().getName();
+		System.out.println("[사후 처리] "+method+"() 리턴값을 받아서 동작");
+		if(returnObj instanceof List) {
+			@SuppressWarnings("unchecked")
+			List<SampleVO> sampleList = (List<SampleVO>)returnObj;
+			System.out.println("검색된 데이터: "+sampleList.size()+"건");
+		}
+	}
+	
+	public void afterThrowingLogic(JoinPoint jp, Exception exceptObj) {
+		String method = jp.getSignature().getName();
+		System.out.println("[예외 처리] "+method+"() 메소드 수행 중 예외 발생!");
+		
+		if(exceptObj instanceof IllegalArgumentException) {
+			System.out.println("부적절한 아규먼트 정보가 입력되었습니다.");
+		} else if (exceptObj instanceof SQLException) {
+			System.out.println("데이터베이스 연동에 문제가 발생하였습니다.");
+		} else {
+			System.out.println("문제발생");
+		}
+		
+	}
+	
+	public Object aroundLogic(ProceedingJoinPoint pjp) throws Throwable {
+		String method = pjp.getSignature().getName();
+		
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		
+		Object obj = pjp.proceed();
+		
+		stopWatch.stop();
+		System.out.println(method+"() 메소드 수행에 걸린 시간: "+stopWatch.getTotalTimeMillis()+"(ms)초");
+		
+		return obj;
+	}
+	
+}
+
+```
+
+<br><br>
+
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75622597-8da10580-5be5-11ea-8e8f-080bdd492b65.png)
+
+
+---
+
+<br><br><br>
+
+
+# 실행환경 공통 기능
+
+
+
+
