@@ -22,7 +22,7 @@ public class SampleDAOJDBC implements SampleDAO {
 
 	// SQL 명령어들
 	private final String SAMPLE_INSERT = "INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) VALUES "
-			+ "(( SELECT NVL(MAX(ID),0) + 1 FROM SAMPLE), ?, ?, ?, SYSDATE)";
+			+ "(?, ?, ?, ?, SYSDATE)";
 	
 	private final String SAMPLE_UPDATE = "UPDATE SAMPLE SET TITLE=?, REG_USER=?, CONTENT=? WHERE ID=?";
 	private final String SAMPLE_DELETE = "DELETE FROM SAMPLE WHERE ID = ?";
@@ -37,7 +37,8 @@ public class SampleDAOJDBC implements SampleDAO {
 		System.out.println("JDBC로 insertSample() 기능처리 등록");
 		conn = JDBCUtil.getConnection();
 		pstmt = conn.prepareStatement(SAMPLE_INSERT);
-		pstmt.setString(1, vo.getTitle());
+		pstmt.setString(1,vo.getId());
+		pstmt.setString(2, vo.getTitle());
 		pstmt.setString(2, vo.getRegUser());
 		pstmt.setString(3, vo.getContent());
 		pstmt.executeUpdate();
@@ -51,7 +52,7 @@ public class SampleDAOJDBC implements SampleDAO {
 		pstmt.setString(1, vo.getTitle());
 		pstmt.setString(2, vo.getRegUser());
 		pstmt.setString(3, vo.getContent());
-		pstmt.setInt(4, vo.getId());
+		pstmt.setString(4, vo.getId());
 		pstmt.executeUpdate();
 		JDBCUtil.close(pstmt, conn);
 	}
@@ -60,7 +61,7 @@ public class SampleDAOJDBC implements SampleDAO {
 		System.out.println("JDBC로  deleteSample() 기능처리 삭제");
 		conn = JDBCUtil.getConnection();
 		pstmt = conn.prepareStatement(SAMPLE_DELETE);
-		pstmt.setInt(1, vo.getId());
+		pstmt.setString(1, vo.getId());
 		pstmt.executeUpdate();
 		JDBCUtil.close(pstmt, conn);
 	}
@@ -70,12 +71,12 @@ public class SampleDAOJDBC implements SampleDAO {
 		SampleVO sample = null;
 		conn = JDBCUtil.getConnection();
 		pstmt = conn.prepareStatement(SAMPLE_GET);
-		pstmt.setInt(1, vo.getId());
+		pstmt.setString(1, vo.getId());
 		rs = pstmt.executeQuery();
 		
 		if(rs.next()) {
 			sample = new SampleVO();
-			sample.setId(rs.getInt("ID"));
+			sample.setId(rs.getString("ID"));
 			sample.setTitle(rs.getString("TITLE"));
 			sample.setRegUser(rs.getString("REG_USER"));
 			sample.setContent(rs.getString("CONTENT"));
@@ -93,7 +94,7 @@ public class SampleDAOJDBC implements SampleDAO {
 		rs = pstmt.executeQuery();
 		while(rs.next()) {
 			SampleVO sample = new SampleVO();
-			sample.setId(rs.getInt("ID"));
+			sample.setId(rs.getString("ID"));
 			sample.setTitle(rs.getString("TITLE"));
 			sample.setRegUser(rs.getString("REG_USER"));
 			sample.setContent(rs.getString("CONTENT"));
