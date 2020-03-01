@@ -2836,10 +2836,248 @@ public class SampleServiceClient {
 7번 글이 등록되지 않았음을 확인했다.
 (참고로 앞서 만들었던 예외처리 공통 기능 빈을 잠시 주석처리하고 했다)
 
+<br><br><br>
 
 ## 아이디 제너레이션
+
+<br>
+
 Primary key를 단순히 숫자로 나타내는게 아니라 시퀀스나 서브쿼리를 이용하여 복잡한 문자열을 만들 수도 있다<br>
 
 표준프레임워크는 이런 문제를 아이디 제너레이션 서비스를 통해 간단하게 해결한다. <br>
+
+### 테이블 수정 및 생성
+
+<br>
+
+일단 테이블을 수정하자. <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/75627587-c73d3500-5c14-11ea-8b59-936de180cc8f.png)
+
+(다 작성하고 드래그 해서 <code>Alt + x </code>를 누르면 SQL이 실행된다.
+
+<br><br>
+
+SampleVO도 고쳐준다
+
+<br>
+
+```java
+public class SampleVO {
+	private String id;
+	private String title;
+	private String regUser;
+	private String content;
+	private Date regDate;
+	
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+	
+	// 이하 생략
+	
+}
+```
+<br>
+
+이렇게 고치고 나오는 에러들을 싹다 고쳐주자. 이클립스에 잘 나오니 차근차근 고쳐나가면 된다. <br>
+쉬우니까 스샷이나 소스는 올리지 않겠다.
+
+<br><br>
+
+## 아이디 제너레이션 서비스 설정
+
+<br><br>
+
+이제 아이디 제너레이션 서비스 관련 스프링 설정을 추가해야 한다. <br>
+src/main/resources 소스 폴더에 context-idgen.xml 설정 파일을 생성하고 다음과 같이 작성한다. <br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>
+					classpath:/egovframework/rte/fdl/idgnr/messages/idgnr
+				</value>
+			</list>
+		</property>
+	</bean>
+</beans>
+```
+
+<br><br>
+
+두 번째로 등록할 클래스는 실제로 유일한 아이디를 생성해주는 클래스다. 다음과 같이 이어서 작성한다. <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>
+					classpath:/egovframework/rte/fdl/idgnr/messages/idgnr
+				</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean name="egovIdGnrService" class="egovframework.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl" destroy-method="destroy">
+		<property name="dataSource" ref="dataSource"/>  
+		<property name="strategy" ref="mixPrefixSample"/>
+		<property name="blockSize" value="1" />
+		<property name="table" value="IDS" />
+		<property name="tableName" value="SAMPLE" />
+	</bean>
+	
+	<bean name="mixPrefixSample" class="egovframework.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
+		<property name="prefix" value="SAMPLE-"/>
+		<property name="cipers" value="5"/>
+		<property name="fillChar" value="0"/>
+	</bean>
+</beans>
+```
+
+<br><br>
+
+```java
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+	
+	@Resource(name="daoSpring")
+	private SampleDAO sampleDAO;
+	
+	@Resource(name="egovIdGnrService")
+	private EgovIdGnrService egovIdGnrService;
+	
+	
+	public SampleServiceImpl() {
+		System.out.println("===> SampleServiceImpl 생성");
+	}
+	
+	public void insertSample(SampleVO vo) throws Exception {
+		String id = egovIdGnrService.getNextStringId();
+		vo.setId(id);
+		sampleDAO.insertSample(vo);
+	}
+	
+	// 이하 생략
+}
+```
+
+<br><br>
+
+DAO 클래스의 insert sql 문과 insert 자바 소스를 살짝 고쳐주자.
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+
+@Repository("daoSpring")
+public class SampleDAOSpring implements SampleDAO {
+	
+	@Resource(name="jdbcTemplate")
+	private JdbcTemplate spring;
+	
+	// SQL 명령어들
+	private final String SAMPLE_INSERT = "INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) VALUES "
+			+ "(?, ?, ?, ?, SYSDATE)";
+	
+	private final String SAMPLE_UPDATE = "UPDATE SAMPLE SET TITLE=?, REG_USER=?, CONTENT=? WHERE ID=?";
+	private final String SAMPLE_DELETE = "DELETE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_GET = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE WHERE ID = ?";
+	private final String SAMPLE_LIST = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE ORDER BY REG_DATE DESC";
+	
+	public SampleDAOSpring() {
+		System.out.println("===> SampleDAOSpring 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("Spring로 insertSample() 기능처리 등록");
+		Object[] args = {vo.getId(),vo.getTitle(),vo.getRegUser(),vo.getContent()};
+		spring.update(SAMPLE_INSERT,args);
+	}
+	
+	// 다른 DAO도 똑같이 SQL을 바꿔주고 필요하면 코드도 살짝 바꿔준다.
+	
+	// 이하 생략
+}
+```
+
+<br><br>
+
+테스트 코드:
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+//	private static final Log LOGGER = LogFactory.getLog(SampleServiceClient.class); 
+	
+	public static void main(String[] args) throws Exception {
+		
+		
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-*.xml");
+		
+		//2. Spring 컨테이너로부터 SampleService 타입의 객체를 Lookup 한다.
+		SampleService sampleService = (SampleService) container.getBean("sampleService");
+		
+		SampleVO vo = new SampleVO();
+		vo.setTitle("임시 제목");
+		vo.setRegUser("테스트");
+		vo.setContent("임시 내용입니다....");
+		sampleService.insertSample(vo);
+		
+		List<SampleVO> sampleList = sampleService.selectSampleList(vo);
+		System.out.println("[ Sample List ]");
+		sampleList.forEach(sample->System.out.println(sample));
+		
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+		
+	}
+}
+```
+
+<br><br>
+
+결과 : <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75628208-146fd580-5c1a-11ea-9298-dd61b7c20bd9.png)
+
+<br><br><br>
+
+## 로깅 처리
 
 
