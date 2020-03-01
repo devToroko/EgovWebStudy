@@ -2258,10 +2258,10 @@ public class SampleServiceClient {
 ## AOP 용어 및 기본 설정
 <br>
 
-1. 조인포인트(JoinPoint) 
+1\. 조인포인트(JoinPoint) 
 (포인트컷 대상이 될 수 있는) 모~든 비즈니스 로직들을 의미한다.
 
-2. 포인트컷(Pointcut)
+2\. 포인트컷(Pointcut)
 필터링된 조인포인트를 의미한다. ex) 등록,삭제,수정은 트랜잭션 처리를 하는 공통기능 필요 / 조회는 필요 X
 ```xml
 <!-- context-aspect.xml의 일부 -->
@@ -2278,7 +2278,7 @@ public class SampleServiceClient {
 포인트컷의 표현식 (expression) 태그는 중요함으로 검색해보는 것을 추천.
 
 
-3. 어드바이스(Advice)
+3\. 어드바이스(Advice)
 횡단관심에 해당하는 공통 기능의 코드를 의미한다. 독립된 클래스의 메소드로 작성된다.
 이러한 어드바이스로 구현된 메소드가 언제 동작할지는 스프링 설정파일로 지정할 수 있다.
 
@@ -2329,7 +2329,7 @@ public class SampleAdvice {
 
 <br><br>
 
-4. 위빙(Weaving)
+4\. 위빙(Weaving)
 
 <br>
 
@@ -2337,16 +2337,93 @@ public class SampleAdvice {
 
 <br><br>
 
-5. 애스팩트(Aspect) 또는 어드바이저(Advisor)
+5\. 애스팩트(Aspect) 또는 어드바이저(Advisor)
 
 <br>
 
 포인트컷 + 어드바이스의 결합이다, 즉 어떤 포인트컷 메소드에 대해서 어떤 어드바이스 메소드를 실행할지를 결정한다. <br>
 
 
-6. AOP 용어 종합
+6\. 정리
+
+사용자가 비즈니스 컴포넌트의 여러 "조인포인트"를 호출 ==> 이때 특정 포인트컷으로 지정된 메소드가 호출되는 순간 <br>
+==> 애스팩트에 설정한 대로 위빙이 일어난다.
+
+
+## 어드바이스 동작 시점
 
 <br>
 
+Before :  비즈니스 로직 실행 전 동작
+After  :  After-Return , After-Throwing, After 
+Around :  실행 전후 처리
+
+<br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- 횡단 관심에 해당하는 Advice 등록  -->
+	<bean id="advice" class="egovframework.sample.service.common.SampleAdvice"></bean>
+	
+	<!-- AOP 설정 -->
+	<aop:config>
+		<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+		<aop:pointcut id="selectPointcut" expression="execution(* egovframework.sample..*Impl.select*(..))" />
+		<aop:aspect ref="advice">
+			<aop:before pointcut-ref="allPointcut" method="beforeLogic"/>
+			<aop:after-returning pointcut-ref="selectPointcut" method="afterReturningLogic"/>
+			<aop:after-throwing pointcut-ref="allPointcut" method="afterThrowingLogic"/>
+			<aop:after pointcut-ref="allPointcut" method="afterLogic"/>
+			<aop:around pointcut-ref="allPointcut" method="aroundLogic"/>
+		</aop:aspect>
+	</aop:config>
+	
+</beans>
+```
+
+<br><br>
 
 
+```java
+package egovframework.sample.service.common;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+
+public class SampleAdvice {
+	
+	public void beforeLogic() {
+		System.out.println("[사전 처리] 비즈니스 로직 수행 전 동작");
+	}
+	
+	public void afterLogic() {
+		System.out.println("[사후 처리] 비즈니스 로직 수행 후 무조건 동작");
+	}
+	
+	public void afterReturningLogic() {
+		System.out.println("[사후 처리] 비즈니스 로직 리턴 값을 받아서 동작");
+	}
+	
+	public void afterThrowingLogic() {
+		System.out.println("[예외 처리] 비즈니스 로직 수행 중 예외 발생");
+	}
+	
+	public Object aroundLogic(ProceedingJoinPoint pjp) throws Throwable {
+		System.out.println("[BEFORE]: 비즈니스 메소드 수행 전에 처리할 내용...");
+		Object returnObj = pjp.proceed();
+		System.out.println("[AFTER]: 비즈니스 메소드 수행 후에 처리할 내용...");
+		return returnObj;
+	}
+	
+}
+```
+
+<br>
+
+결과: <br>
+![image](https://user-images.githubusercontent.com/51431766/75622001-da351280-5bde-11ea-9d2a-e4fd26674a4b.png)
