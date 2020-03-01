@@ -2575,6 +2575,271 @@ public class SampleAdvice {
 
 # 실행환경 공통 기능
 
+- 예외처리
+- 트랜잭션 처리
+- 아이디 제네레이션(전자정부프레임워크)
+- 로깅 처리
 
+<br><br>
+
+## 예외처리
+스프링의 AOP를 사용해서 예외처리 공통기능을 처리해보자. <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- 횡단 관심에 해당하는 Advice 등록  -->
+	<!-- <bean id="advice" class="egovframework.sample.service.common.SampleAdvice"></bean> -->
+	
+	<!-- AOP 설정 -->
+	<!-- <aop:config>
+		<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+		<aop:pointcut id="selectPointcut" expression="execution(* egovframework.sample..*Impl.select*(..))" />
+		<aop:aspect ref="advice">
+			<aop:before pointcut-ref="allPointcut" method="beforeLogic"/>
+			<aop:after-returning pointcut-ref="selectPointcut" method="afterReturningLogic" returning="returnObj"/>
+			<aop:after-throwing pointcut-ref="allPointcut" method="afterThrowingLogic" throwing="exceptObj"/>
+			<aop:after pointcut-ref="allPointcut" method="afterLogic"/>
+			<aop:around pointcut-ref="allPointcut" method="aroundLogic" />
+		</aop:aspect>
+	</aop:config> -->
+	
+	
+	<!-- 공통기능: 예외처리 -->
+	<bean id="exceptionTransfer" class="egovframework.rte.fdl.cmmn.aspect.ExceptionTransfer"></bean>	
+	
+	<aop:config>
+		<aop:pointcut expression="execution(* egovframework.sample..impl.*Impl)" id="exceptionPointcut"/>
+		<aop:aspect ref="exceptionTransfer">
+			<aop:after-throwing pointcut-ref="exceptionPointcut" method="transfer" throwing="exception"/>
+		</aop:aspect>
+	</aop:config>
+</beans>
+```
+<br>
+
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75624044-d19b0700-5bf3-11ea-83ac-6a740a6a00aa.png)
+
+<br><br><br>
+
+## 트랜잭션 처리
+스프링의 AOP를 사용한다. 다만 이전처럼 \<aop:aspect\> 가 아니라 \<aop:advisor\> 를 사용한다. <br>
+일단 context-transaction.xml 을 하나 만들자. 그리고 namespace도 아래와 같이 설정해주자. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75624116-b67cc700-5bf4-11ea-98af-f1586f5b1625.png)
+
+<br><br>
+
+### 트랜잭션 관리자 등록
+
+<br>
+
+트랜잭션 관련설정에서 가장 먼저 등록하는 것은 트랜잭션 관리자 클래스다. 스프링은 다양한 트랜잭션 관리자를 지원한다. <br>
+(어떤 기술을 쓰냐에 따라 관리자가 바뀐다) <br>
+
+스프링이 지원하는 모든 트랜잭션 관리자 클래스는 PlatformTransationManager 인터페이스를 구현하고 있다. <br>
+이 인터페이스에는 commit(TransactionStatus status), rollback(TransactionStatus status) 메서드가 선언되어있다. <br>
+
+우리는 구현 클래스 중에서 DataSourceTransactionManager  를 이용할 것이다.  이 클래스는 Spring JDBC를 사용하거나 <br>
+IBatis 혹은 MyBatis 로 데이터베이스를 연동할 때 트랜잭션을 처리해주기 때문이다. <br>
+(JPA의 경우는 JPATransactionManager 로 변경해주면 된다) <br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+</beans>
+```
+
+<br><br>
+
+### 트랜잭션 어드바이스 등록
+
+위처럼 xml을 고친것만으로는 자동으로 트랜잭션이 관리되는 것은 아니다! <br>
+<strong>PlatformTransationManager 구현 객체 스스로 자신이 가진 메소드(commmit, rollback)를 실행할 수는 없다.</strong> <br>
+이제 이 트랜잭션 관리자를 이용하여 트랜잭션을 제어하는 <strong>어드바이스</strong>를 추가로 등록해야 한다. <br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="*" rollback-for="Exception"/>
+		</tx:attributes>
+	</tx:advice>
+</beans>
+```
+
+<br>
+
+우리가 앞서했던 AOP에서는 어드바이스 클래스를 직접 구현했다. 하지만 트랜잭션 관리 어드바이스는 직접 구현할 <br>
+없으며 , 스프링 컨테이너가 \<tx:advice\> 설정을 참조하여 <strong>자동으로 생성한다</strong>. <br>
+여기에서 중요한 것은 컨테이너가 생성한 트랜잭션 관련 어드바이스 객체의 메소드 이름을 확인할 수 없다는 것이다<br>
+우리가 알 수 있는 것은 단지 id 속성으로 지정된 어드바이스의 아이디와 transaction-manager 속성으로 어드바이스가<br>
+참조하는 트랜잭션 관리자 정보뿐이다. 위 설정은 txAdvice 라는 어드바이스가 앞에서 지정한 txManager를 이용하여 <br>
+트랜잭션을 관리한다는 설정이다. \<tx:attributes\>의 자식 앨리먼트로 \<tx:method\>로 트랜잭션을 적용할 메소드를 <br>
+적용할 수 잇다. 
+
+<br><br>
+
+
+### AOP 설정을 통한 트랜잭션 적용
+우리가 여태까지 써왔던 \<aop:aspect\> 는 ref 속성을 통해서 참조하려는 빈의 아이디를 알아야 했고 <br>
+특히 해당 빈의 메서드 이름까지 알아야했다. 하지만 현재 우리가 만든 어드바이스는 그런 정보를 하나도 <br>
+하나도 알 수 없다. 그러므로 \<aop:aspect\>를 쓸 수 없는 것이다. <br><br>
+
+아무튼 지금까지 만든 어드바이스를 적용하기 위해서는 결국 \<aop:aspect\> 에 적용해야한다. <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="*" rollback-for="Exception"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<aop:pointcut id="requiredTx" expression="execution(* egovframework.sample..impl.*Impl.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="requiredTx"/>
+	</aop:config>
+</beans>
+```
+
+---
+
+<br>
+
+### 테스트
+테스트 내용은 하나의 insert 이후에 고의로 throw Exception을 할 것이다. 그래서 예외를 던지기 직전의 insert 된  <br>
+정보가 없어졌는지를 확인하는 것이다. <br>
+
+현재상황 Sample 테이블의 상황은 아래와 같다.
+
+![image](https://user-images.githubusercontent.com/51431766/75624777-d57e5780-5bfa-11ea-9b81-fbfc0ccff710.png)
+
+<br>
+
+7번 데이터가 들어갈 것이고, 그 이후에 예외가 터져서 7번 데이터가 다시 없어지는 것을 확인 할 것이다.
+
+<br>
+
+```java
+@Service("sampleService")
+public class SampleServiceImpl implements SampleService {
+
+	@Resource(name="daoSpring")
+	private SampleDAO sampleDAO;
+	
+	public void insertSample(SampleVO vo) throws Exception {
+
+		sampleDAO.insertSample(vo);
+		throw new IllegalArgumentException();
+	}
+}
+```
+
+<br>
+
+테스트 코드 내용
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+//	private static final Log LOGGER = LogFactory.getLog(SampleServiceClient.class); 
+	
+	public static void main(String[] args) throws Exception {
+		
+		
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-*.xml");
+		
+		//2. Spring 컨테이너로부터 SampleService 타입의 객체를 Lookup 한다.
+		SampleService sampleService = (SampleService) container.getBean("sampleService");
+		
+		SampleVO vo = new SampleVO();
+		vo.setTitle("임시 제목");
+		vo.setRegUser("테스트");
+		vo.setContent("임시 내용입니다....");
+		sampleService.insertSample(vo);
+		
+		List<SampleVO> sampleList = sampleService.selectSampleList(vo);
+		System.out.println("[ Sample List ]");
+		sampleList.forEach(sample->System.out.println(sample));
+		
+//		vo.setId(7);
+//		sampleService.deleteSample(vo);
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+	
+	}
+}
+```
+
+<br>
+
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75625030-6fdf9a80-5bfd-11ea-8dee-8e9ebb14a16b.png)
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/75625049-956ca400-5bfd-11ea-9bb1-b4ed369cd1b0.png)
+
+7번 글이 등록되지 않았음을 확인했다.
+(참고로 앞서 만들었던 예외처리 공통 기능 빈을 잠시 주석처리하고 했다)
+
+
+## 아이디 제너레이션
+Primary key를 단순히 숫자로 나타내는게 아니라 시퀀스나 서브쿼리를 이용하여 복잡한 문자열을 만들 수도 있다<br>
+
+표준프레임워크는 이런 문제를 아이디 제너레이션 서비스를 통해 간단하게 해결한다. <br>
 
 
