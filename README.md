@@ -2170,4 +2170,183 @@ AOP 를 공부하면서 자주 나온느 단어가 있는데 아래와 같다. <
 
 ## 스프링 AOP 설정
 
+![image](https://user-images.githubusercontent.com/51431766/75620670-fcbf2f80-5bce-11ea-9733-42ef86475ad6.png)
+
+![image](https://user-images.githubusercontent.com/51431766/75620435-5a05b180-5bcc-11ea-804f-ea311c2d5858.png)
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- 횡단 관심에 해당하는 Advice 등록  -->
+	<bean id="advice" class="egovframework.sample.service.common.SampleAdvice"></bean>
+	
+	<!-- AOP 설정 -->
+	<aop:config>
+		<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+		<aop:aspect ref="advice">
+			<aop:before pointcut-ref="allPointcut" method="advancedBeforeLogic"/>
+		</aop:aspect>
+	</aop:config>
+	
+</beans>
+
+```
+
+```java
+package egovframework.sample.service;
+
+import java.util.List;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class SampleServiceClient {
+	
+	
+	public static void main(String[] args) throws Exception {
+		//1. 스프링 컨테이너를 구동한다
+		AbstractApplicationContext container =  
+				new GenericXmlApplicationContext("egovframework/spring/context-*.xml");
+		
+		//2. Spring 컨테이너로부터 SampleService 타입의 객체를 Lookup 한다.
+		SampleService sampleService = (SampleService) container.getBean("sampleService");
+		
+		SampleVO vo = new SampleVO();
+		vo.setTitle("임시 제목");
+		vo.setRegUser("테스트");
+		vo.setContent("임시 내용입니다....");
+		sampleService.insertSample(vo);
+		
+		List<SampleVO> sampleList = sampleService.selectSampleList(vo);
+		System.out.println("[ Sample List ]");
+		sampleList.forEach(sample->System.out.println(sample));
+		
+		vo.setId(7);
+		sampleService.deleteSample(vo);
+		
+		//3. Spring 컨테이너를 종료한다.
+		container.close();
+		
+	}
+}
+```
+
+<br><br>
+
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75620684-1fe9df00-5bcf-11ea-8c2d-a72bb07b8b00.png)
+
+(참고로 현재 log4j2.xml 의 내용을 약간 변경해서 위처럼 많은 내용이 안 나오는 것이다
+
+```xml
+<Logger name="org.springframework" level="WARN" additivity="false">
+    <AppenderRef ref="console" />
+</Logger>
+```
+)
+
+
+<br><br>
+
+
+## AOP 용어 및 기본 설정
+<br>
+
+1. 조인포인트(JoinPoint) 
+(포인트컷 대상이 될 수 있는) 모~든 비즈니스 로직들을 의미한다.
+
+2. 포인트컷(Pointcut)
+필터링된 조인포인트를 의미한다. ex) 등록,삭제,수정은 트랜잭션 처리를 하는 공통기능 필요 / 조회는 필요 X
+```xml
+<!-- context-aspect.xml의 일부 -->
+<!-- AOP 설정 -->
+<aop:config>
+	<!-- crud에 대해서 -->
+	<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+	<aop:pointcut id="selectPointcut" expression="execution(* egovframework.sample..*Impl.select*(..))" />
+	<aop:aspect ref="advice">
+		<aop:before pointcut-ref="allPointcut" method="advancedBeforeLogic"/>
+	</aop:aspect>
+</aop:config>
+```
+포인트컷의 표현식 (expression) 태그는 중요함으로 검색해보는 것을 추천.
+
+
+3. 어드바이스(Advice)
+횡단관심에 해당하는 공통 기능의 코드를 의미한다. 독립된 클래스의 메소드로 작성된다.
+이러한 어드바이스로 구현된 메소드가 언제 동작할지는 스프링 설정파일로 지정할 수 있다.
+
+
+```java
+package egovframework.sample.service.common;
+
+public class SampleAdvice {
+	
+	public void beforeLogic() {
+		System.out.println("[사전 처리] 비즈니스 로직 수행 전 동작");
+	}
+	
+	public void afterLogic() {
+		System.out.println("[사후 처리] 비즈니스 로직 수행 후 동작");
+	}
+}
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+	<!-- 횡단 관심에 해당하는 Advice 등록  -->
+	<bean id="advice" class="egovframework.sample.service.common.SampleAdvice"></bean>
+	
+	<!-- AOP 설정 -->
+	<aop:config>
+		<aop:pointcut id="allPointcut" expression="execution(* egovframework.sample..*Impl.*(..))" />
+		<aop:pointcut id="selectPointcut" expression="execution(* egovframework.sample..*Impl.select*(..))" />
+		<aop:aspect ref="advice">
+			<aop:before pointcut-ref="allPointcut" method="beforeLogic"/>
+			<aop:after pointcut-ref="selectPointcut" method="afterLogic"/>
+		</aop:aspect>
+	</aop:config>
+	
+</beans>
+```
+
+<br>
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75621001-a5bb5980-5bd2-11ea-8805-107ce95d69af.png)
+
+<br><br>
+
+4. 위빙(Weaving)
+
+<br>
+
+포인트컷으로 지정한 핵심 관심 메소드가 호출될 때, 어드바이스에 해당하는 관심 메소드가 삽입되는 과정을 의미한다.
+
+<br><br>
+
+5. 애스팩트(Aspect) 또는 어드바이저(Advisor)
+
+<br>
+
+포인트컷 + 어드바이스의 결합이다, 즉 어떤 포인트컷 메소드에 대해서 어떤 어드바이스 메소드를 실행할지를 결정한다. <br>
+
+
+6. AOP 용어 종합
+
+<br>
+
+
 
