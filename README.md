@@ -3102,6 +3102,207 @@ public class SampleServiceClient {
 
 <br><br><br>
 
-## 로깅 처리
+## 로깅 처리 (패스)
 
+---
+
+<br><br>
+
+
+# 스프링 MVC 설정
+
+<br><br>
+
+## Model2 아키텍처
+
+<br><br>
+
+Model1 아키텍처가 엔터프라이즈 시스템에 적합하지 않은 가장 큰 이유는 JSP 파일에 자바 로직과 화면 디자인이 <br>
+통합되어 유지보수가 어렵기 때문이다. 개발자는 개발자대로 힘들고, 디자이너는 디자이너 대로 힘들어한다. <br>
+<br>
+그래서 고안된 것이 바로 Model2 아키텍처이다. Model2 아키텍처에서 가장 중요한 것은 Controller의 등장이며 <br>
+이 Controller는 서블릿 클래스를 중심으로 구현된다. <br>
+
+
+## DispatcherServlet 등록
+DispatcherServlet은 모든 클라이언트의 요청을 가장 먼저 받아들이는, MVC에서 가장 중요한 클래스로이다. <br>
+그래서 실제로 스프링 MVC 적용에 있어서도 가장 먼저 WEB-INF/web.xml 파일에 스플링 프레임워크가 제공하는 <br>
+DispatcherServlet을 등록해야 한다. <br><br>
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>EgovWebTemplateMk</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  
+  <servlet>
+  	<servlet-name>action</servlet-name>
+  	<servlet-class>
+  		org.springframework.web.servlet.DispatcherServlet
+  	</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+  	<servlet-name>action</servlet-name>
+  	<url-pattern>*.do</url-pattern>
+  </servlet-mapping>
+  
+</web-app>
+```
+
+<br>
+
+위처럼만 하고 실행하면 당연히 안된다. 하지만 이 작업만으로도 많은 일이 일어난 것이다. <br>
+처음에 서블릿 컨테이너에  \*.do 요청이 들어왔을 때 서블릿 컨테이너가 DispatcherServlet을 생성한다.<br>
+그리고 곧바로 DispatcherServlet의 init() 메서드 ( Servlet이 생성되는 이후에 곧바로 실행되는 메서드) <br>
+내에서 XmlWebApplicationContext ( 스프링 컨테이너 ) 를 생성한다. <br><br>
+
+하지만 DispatcherServlet 혼자서는 클라이언트 요청을 처리하지 못하고 , <strong>반드시 HandlerMapping, Controller <br>
+ViewResolver </strong> 객체들과 상호작용해야한다. 이러한 객체들을 생성하고 스프링컨테이너가 관리하기 위해서 <br>
+DispatcherServlet에서 먼저 스프링 컨테이너를 생성해야만 가능한 것이다. <br><br>
+
+그러면  HandlerMapping, Controller , ViewResolver 를 빈으로 등록하기 위한 설정 파일은 어떻게 설정되는 걸까? <br><br>
+
+우리가 앞서 만들었던
+
+```xml
+<servlet>
+	<servlet-name>action</servlet-name>
+	<servlet-class>
+		org.springframework.web.servlet.DispatcherServlet
+	</servlet-class>
+</servlet>
+```
+
+에는 \<servlet-name\>action\</servlet-name\> 이 있다. 여기서 "action" 이라는 이름 값이 있는데 <br>
+이 이름 값에 "-servlet"을 붙이면, 그게 바로 DispatcherServlet이 참조하게 될 스프링 xml 설정 파일의 이름이다. <br>
+그리고 파일의 위치는 기본적으로 WEB-INF 폴더 내이다. <br>
+
+### WEB-INF/action-servlet.xml 파일 생성 (Spring Bean Configuration File으로 생성)
+
+![image](https://user-images.githubusercontent.com/51431766/75683662-eacab300-5cda-11ea-9ffa-68277297d683.png)
+
+(참고로 action-servlet.xml의 내용물은 작성하지 않은 상태다) <br><br>
+
+
+### Tomcat Web Module Path 설정 변경
+
+![image](https://user-images.githubusercontent.com/51431766/75683831-26657d00-5cdb-11ea-9886-26e05a436fbd.png) 
+
+<br><br>
+
+### index.jsp
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%>
+<jsp:forward page="/selectSampleList.do" />
+```
+
+
+<br><br>
+
+### 서버 실행
+그리고 실행하면 다음과 같은 로그를 볼 수 있다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75683967-5b71cf80-5cdb-11ea-8a46-9760c1f382a5.png)
+![image](https://user-images.githubusercontent.com/51431766/75684162-983dc680-5cdb-11ea-8ae8-6e8776d53cdf.png)
+
+비록 404 에러가 나지만 그래도 서블릿이 성공적으로 생성된 것을 확인할 수 있다.
+
+<br><br>
+
+### 스프링 설정파일 변경
+
+<br>
+
+위에서 처럼 DispatcherServlet이 default로 주는 설정파일 위치와 이름을 사용하는 것도 좋지만, <br>
+설정파일의 이름을 바꾸거나 위치를 변경할 수도 있다. 이때 사용하는 것이 DispatcherServlet의 초기화 파라미터다 <br><br>
+
+WEB-INF/config/dispatcher-servlet.xml  로 설정파일의 위치와 이름을 바꾸고, DispatcherServlet이 스프링 컨테이너를 <br>
+생성할 때 사용토록 해보자. <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/75684630-86a8ee80-5cdc-11ea-88ef-085317a77909.png)
+
+<br><br>
+
+web.xml 수정 <br>
+
+```xml
+<servlet>
+  	<servlet-name>action</servlet-name>
+  	<servlet-class>
+  		org.springframework.web.servlet.DispatcherServlet
+  	</servlet-class>
+  	<init-param>
+  		<param-name>contextConfigLocation</param-name>
+  		<param-value>/WEB-INF/config/dispatcher-servlet.xml</param-value>
+  	</init-param>
+</servlet>
+```
+<br>
+
+테스트 하면 다음과 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75685122-6cbbdb80-5cdd-11ea-9518-97423e409aa3.png)
+
+<br><br>
+
+### 인코딩 설정
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>EgovWebTemplateMk</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  
+  
+  
+  <servlet>
+  	<servlet-name>action</servlet-name>
+  	<servlet-class>
+  		org.springframework.web.servlet.DispatcherServlet
+  	</servlet-class>
+  	<init-param>
+  		<param-name>contextConfigLocation</param-name>
+  		<param-value>/WEB-INF/config/dispatcher-servlet.xml</param-value>
+  	</init-param>
+  </servlet>
+  
+  <servlet-mapping>
+  	<servlet-name>action</servlet-name>
+  	<url-pattern>*.do</url-pattern>
+  </servlet-mapping>
+  
+  <filter>
+  	<filter-name>characterEncoding</filter-name>
+  	<filter-class>
+  		org.springframework.web.filter.CharacterEncodingFilter
+  	</filter-class>
+  	<init-param>
+  		<param-name>encoding</param-name>
+  		<param-value>UTF-8</param-value>
+  	</init-param>
+  </filter>
+  
+  <filter-mapping>
+  	<filter-name>characterEncoding</filter-name>
+  	<url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  
+</web-app>
+```
 
