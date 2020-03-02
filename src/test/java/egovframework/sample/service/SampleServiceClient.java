@@ -29,7 +29,6 @@ public class SampleServiceClient {
 		System.out.println("[ Sample List ]");
 		sampleList.forEach(sample->System.out.println(sample));
 		
-		
 		//3. Spring 컨테이너를 종료한다.
 		container.close();
 		
