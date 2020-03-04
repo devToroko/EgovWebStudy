@@ -3306,3 +3306,77 @@ web.xml 수정 <br>
 </web-app>
 ```
 
+## 스프링 MVC 적용
+
+<br>
+
+
+### 컨트롤러를 구현해보자.
+
+```java
+package egovframework.sample.web;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class SelectSampleListController implements Controller{
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 목록 검색 처리");
+		
+		// 1. 사용자 입력 정보 추출
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		List<SampleVO> sampleList = sampleDAO.selectSampleList(vo);
+		
+		// 3. 검색 결과를 세션에 저장하고 목록 화면으로 이동한다.
+		HttpSession session = request.getSession();
+		session.setAttribute("sampleList", sampleList);
+		
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("selectSampleList.jsp");
+		
+		return mav;
+	}
+		
+}
+```
+
+<br><br>
+
+### HandlerMapping 등록
+
+<br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Controller 등록 -->
+	<bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController"></bean>
+</beans>
+```
+
