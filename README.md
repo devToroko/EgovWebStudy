@@ -3380,3 +3380,10 @@ public class SelectSampleListController implements Controller{
 </beans>
 ```
 
+<br><br>
+
+결과 <br>
+
+![image](https://user-images.githubusercontent.com/51431766/75887401-17aecf80-5e6d-11ea-900d-c6563d037cc3.png)
+
+<br><br>
