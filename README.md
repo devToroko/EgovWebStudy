@@ -3363,11 +3363,18 @@ Always use this server when running this project 체크 박스를 체크해준�
 
 selectSampleList.jsp 파일을 src/main/webapp 에 다음과 같이 작성한다. <br><br>
 
-파일위치: ![image](https://user-images.githubusercontent.com/51431766/76137078-3800a900-607c-11ea-9eeb-dd15dcae5a74.png)
+#### 파일위치 
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/76137078-3800a900-607c-11ea-9eeb-dd15dcae5a74.png)
 
 <br><br>
 
-jsp 작성: 참고로 jsp 작성에 bootstrap을 사용했다. 이왕하는 거 좀 이쁘게(?) 해봤다. <br>
+#### jsp 작성
+<br>
+
+참고로 jsp 작성에 bootstrap을 사용했다. 이왕하는 거 좀 이쁘게(?) 해봤다. <br>
 ~~안 이쁘다고 생각하면 감성이 좀 다르다고 쳐주길 바란다.~~ <br><br>
 
 ```jsp
@@ -3436,6 +3443,81 @@ jsp 작성: 참고로 jsp 작성에 bootstrap을 사용했다. 이왕하는 거 
 ![image](https://user-images.githubusercontent.com/51431766/76137113-7b5b1780-607c-11ea-9758-2106db2d4a2e.png)
 
 <br><br>
+
+### 상세 기능 구현 
+목록 화면에서 사용자가 클릭한 샘플 데이터를 조회하고, 조회된 샘플의 상세 화면을 제공하는 selectSample.jsp를 작성하자. <br>
+(파일 위치는 이전과 마찬가지로 src/main/webapp 이다)
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+
+	// 1. 검색할 아이디 추출
+	String id = request.getParameter("id");
+	
+	// 2. DB 연동 처리
+	SampleVO vo = new SampleVO();
+	vo.setId(id);
+	
+	SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+	SampleVO sample = sampleDAO.selectSample(vo);
+	
+	// 3. 응답 화면 구성
+%>    
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 상세</title>
+</head>
+<body>
+	<div class="container">
+	  <h2>SAMPLE 상세</h2>
+	  <p>SampleVO의 상세한 내용입니다.</p><br>
+	  
+	  <form action="updateSample_proc.jsp" method="post">
+	    <div class="form-group">
+	      <label for="id">아이디</label>
+	      <input type="text" name="id" class="form-control" id="id" readonly="readonly" value="<%= sample.getId() %>">
+	    </div>
+	    <div class="form-group">
+	      <label for="title">제목</label>
+	      <input type="text" name="title" class="form-control" id="title" value="<%= sample.getTitle()%>">
+	    </div>
+	    <div class="form-group">
+	      <label for="regUser">작성자</label>
+	      <input type="text" name="regUser" class="form-control" id="regUser" value="<%= sample.getRegUser() %>" >
+	    </div>
+	    <div class="form-group">
+	      <label for="content">내용</label>
+	      <textarea class="form-control" name="content"><%= sample.getContent() %></textarea>
+	    </div>
+	    <br>
+	        등록일 : <%= sample.getRegDate() %>
+		<br> <br>
+	    <button type="submit" class="btn btn-default">UPDATE</button>
+	  </form>
+	</div>
+</body>
+</html>
+```
+
+참고로 input에서 disabled 는 서버에 해당 input을 전송 안하는 것이고, <br>
+readonly는 서버에 해당 input이 전송이 된다. 둘 다 화면 상에서 수정은 안된다. 
+
+<br><br>
+
+결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76137408-f96ced80-607f-11ea-9313-17d6f588f76b.png)
 
 
 
