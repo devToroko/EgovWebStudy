@@ -3750,16 +3750,32 @@ deleteSample_proc.jsp 를 작성 <br>
 
 Model1 아키텍처가 엔터프라이즈 시스템에 적합하지 않은 가장 큰 이유는 JSP 파일에 자바 로직과 화면 디자인이 <br>
 통합되어 유지보수가 어렵기 때문이다. 개발자는 개발자대로 힘들고, 디자이너는 디자이너 대로 힘들어한다. <br>
-<br>
-그래서 고안된 것이 바로 Model2 아키텍처이다. Model2 아키텍처에서 가장 중요한 것은 Controller의 등장이며 <br>
-이 Controller는 서블릿 클래스를 중심으로 구현된다. <br>
 
+<br>
+
+그래서 고안된 것이 바로 Model2 아키텍처이다. Model2 아키텍처는 Model1에서 JSP 에 있는 자바 코드만 따로 분리한 <br>
+것이다. 그리고 그 자바 코드, 즉 자바 클래스를 우리는 Controller라고 부른다. 이렇게 분리가 되면 JSP에는 <br>
+View와 관련된 디자인만 남게되어 디자이너가 로직에 구애 받지 않을 수 있게된다. 개발자들은 Controller와 Model만 신경 쓰면된다. <br>
+
+<br>
+
+우리가 사용할 스프링 MVC는 DispatcherServlet을 시작으로 다양한 객체들이 상호작용하면서 클라이언트의 요청을 처리한다 <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76150072-a0d23a80-60e9-11ea-80cc-16257ec0cf18.png)
+
+<br> 
+
+그림에 나온 것들을 하나하나 알아가보자.
+
+<br><br>
 
 ## DispatcherServlet 등록
-DispatcherServlet은 모든 클라이언트의 요청을 가장 먼저 받아들이는, MVC에서 가장 중요한 클래스로이다. <br>
-그래서 실제로 스프링 MVC 적용에 있어서도 가장 먼저 WEB-INF/web.xml 파일에 스플링 프레임워크가 제공하는 <br>
-DispatcherServlet을 등록해야 한다. <br><br>
+DispatcherServlet은 모든 클라이언트의 요청을 가장 먼저 받아들이는, MVC에서 가장 중요한 클래스이다. <br>
+그래서 스프링 MVC 프레임워크 적용의 첫 단추는 WEB-INF/web.xml 파일에 스프링이 제공하는 <br>
+**DispatcherServlet**을 등록하는 것이다. <br><br>
 
+
+**web.xml 수정**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -3791,16 +3807,49 @@ DispatcherServlet을 등록해야 한다. <br><br>
 
 <br>
 
-위처럼만 하고 실행하면 당연히 안된다. 하지만 이 작업만으로도 많은 일이 일어난 것이다. <br>
-처음에 서블릿 컨테이너에  \*.do 요청이 들어왔을 때 서블릿 컨테이너가 DispatcherServlet을 생성한다.<br>
-그리고 곧바로 DispatcherServlet의 init() 메서드 ( Servlet이 생성되는 이후에 곧바로 실행되는 메서드) <br>
+index.jsp를 수정해보고 실행해보자. 어떤 결과를 볼 수 있을까? <br><br>
+
+
+**index.jsp 수정**
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<jsp:forward page="/selectSampleList.do" />
+```
+
+<br><br>
+
+**서버 실행**
+
+![image](https://user-images.githubusercontent.com/51431766/76150187-0115ac00-60eb-11ea-85f2-e6a211424280.png)
+
+<br>
+
+**찍히는 예외 로그들**
+
+![image](https://user-images.githubusercontent.com/51431766/76150235-73868c00-60eb-11ea-96a2-531257907d23.png)
+
+<br><br>
+
+
+
+
+위처럼만 하고 실행하면 당연히 안된다.<br>
+이유는 서블릿 컨테이너에  \*.do 요청이 들어왔을 때 서블릿 컨테이너가 DispatcherServlet을 생성한다.<br>
+그리고 곧바로 DispatcherServlet의 init() 메서드 (Servlet이 생성되는 이후에 곧바로 실행되는 메서드) <br>
 내에서 XmlWebApplicationContext ( 스프링 컨테이너 ) 를 생성한다. <br><br>
 
 하지만 DispatcherServlet 혼자서는 클라이언트 요청을 처리하지 못하고 , <strong>반드시 HandlerMapping, Controller <br>
-ViewResolver </strong> 객체들과 상호작용해야한다. 이러한 객체들을 생성하고 스프링컨테이너가 관리하기 위해서 <br>
-DispatcherServlet에서 먼저 스프링 컨테이너를 생성해야만 가능한 것이다. <br><br>
+ViewResolver </strong> 객체들과 상호작용해야한다. 그리고 이 3개의 객체들은 일반 클래스이며, 스프링 컨테이너가 관리해야할<br>
+객체들이다.  <br><br>
 
-그러면  HandlerMapping, Controller , ViewResolver 를 빈으로 등록하기 위한 설정 파일은 어떻게 설정되는 걸까? <br><br>
+![image](https://user-images.githubusercontent.com/51431766/76150370-1a1f5c80-60ed-11ea-8ab4-982c6d3f30f3.png)
+
+<br>
+
+그러면  HandlerMapping, Controller , ViewResolver 를 스프링 컨테이너가 사용할 수 있도록 해보자. <br><br>
+
 
 우리가 앞서 만들었던
 
