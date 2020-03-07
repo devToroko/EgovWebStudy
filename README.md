@@ -3731,6 +3731,14 @@ deleteSample_proc.jsp 를 작성 <br>
 %>
 ```
 
+<br><br>
+
+결과화면: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76138227-2ffb3600-6089-11ea-96df-2afaac5d2661.png)
+
+<br><br>
+
 <strong>이로서 Model1을 통한 CRUD를 구현해보았다.</strong> <br>
 이제는 Spring을 통한 Model2 방식의 CRUD 를 구현해보자.
 
