@@ -3445,6 +3445,7 @@ selectSampleList.jsp 파일을 src/main/webapp 에 다음과 같이 작성한다
 <br><br>
 
 ### 상세 기능 구현 
+
 목록 화면에서 사용자가 클릭한 샘플 데이터를 조회하고, 조회된 샘플의 상세 화면을 제공하는 selectSample.jsp를 작성하자. <br>
 (파일 위치는 이전과 마찬가지로 src/main/webapp 이다)
 
@@ -3486,7 +3487,7 @@ selectSampleList.jsp 파일을 src/main/webapp 에 다음과 같이 작성한다
 	  <form action="updateSample_proc.jsp" method="post">
 	    <div class="form-group">
 	      <label for="id">아이디</label>
-	      <input type="text" name="id" class="form-control" id="id" readonly="readonly" value="<%= sample.getId() %>">
+	      <input type="text" name="id" class="form-control" id="id" disabled="disabled" value="<%= sample.getId() %>">
 	    </div>
 	    <div class="form-group">
 	      <label for="title">제목</label>
@@ -3500,11 +3501,16 @@ selectSampleList.jsp 파일을 src/main/webapp 에 다음과 같이 작성한다
 	      <label for="content">내용</label>
 	      <textarea class="form-control" name="content"><%= sample.getContent() %></textarea>
 	    </div>
-	    <br>
-	        등록일 : <%= sample.getRegDate() %>
-		<br> <br>
+	    <br> 등록일 : <%= sample.getRegDate() %>
+	    <br><br>
 	    <button type="submit" class="btn btn-default">UPDATE</button>
 	  </form>
+	</div>
+	
+	<div class="container" style="margin-top:2em; text-align:right">
+	  <a href="insertSample.jsp" class="btn btn-success" role="button">INSERT</a>
+	  <a href="deleteSample_proc.jsp" class="btn btn-danger" role="button">DELETE</a>
+	  <a href="selectSampleList.jsp" class="btn btn-info" role="button">LIST</a>
 	</div>
 </body>
 </html>
@@ -3517,7 +3523,97 @@ readonly는 서버에 해당 input이 전송이 된다. 둘 다 화면 상에서
 
 결과: <br>
 
-![image](https://user-images.githubusercontent.com/51431766/76137408-f96ced80-607f-11ea-9313-17d6f588f76b.png)
+![image](https://user-images.githubusercontent.com/51431766/76137499-1a820e00-6081-11ea-9a42-1b1d47ed23be.png)
+
+
+<br><br>
+
+### 등록 기능 구현 (화면)
+
+만든 파일위치는 위와 동일.
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 등록</title>
+</head>
+<body>
+	<div class="container">
+	  <h2>SAMPLE 등록</h2>
+	  <p>SampleVO를 등록하는 화면입니다.</p><br>
+	  
+	  <form action="insertSample_proc.jsp" method="post">
+		<div class="form-group">
+			<label for="title">제목</label>
+			<input type="text" name="title" class="form-control" id="title" placeholder="제목을  입력하세요" required="required">
+		</div>
+		<div class="form-group">
+	      <label for="regUser">작성자</label>
+	      <input type="text" name="regUser" class="form-control" id="regUser" placeholder="작성자를 입력하세요" required="required">
+	    </div>
+	    <div class="form-group">
+	      <label for="content">내용</label>
+	      <textarea class="form-control" name="content"></textarea>
+	    </div>
+	    <br><br>
+	    <button type="submit" class="btn btn-success">INSERT</button>
+	    <a href="selectSampleList.jsp" class="btn btn-info" role="button">LIST</a>
+	  </form>
+	</div>
+		
+</body>
+</html>
+```
+
+<br><br>
+
+결과 화면 : <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76137715-5b7b2200-6083-11ea-8d0a-883a8d7fa94e.png)
+
+<br><br>
+
+### 등록 기능 구현 (기능)
+기능을 처리해줄 insertSample_proc.jsp 를 만들자. (위치는 아까와 동일~)
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+	
+	// 1. 사용자 입력 정보 추출
+	request.setCharacterEncoding("UTF-8");
+	String title = request.getParameter("title");
+	String regUser = request.getParameter("regUser");
+	String content = request.getParameter("content");
+	
+	// 2. DB 연동 처리
+	SampleVO vo = new SampleVO();
+	vo.setTitle(title);
+	vo.setRegUser(regUser);
+	vo.setContent(content);
+	
+	SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+	sampleDAO.insertSample(vo);
+	
+	// 3. 화면 네비게이션
+	response.sendRedirect("selectSampleList.jsp");
+	
+%>
+```
+
+<br><br>
 
 
 
