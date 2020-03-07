@@ -3600,6 +3600,7 @@ readonly는 서버에 해당 input이 전송이 된다. 둘 다 화면 상에서
 	
 	// 2. DB 연동 처리
 	SampleVO vo = new SampleVO();
+	vo.setId("SAMPLE-00009");  // 임시값이다. 겹치지 않는 ID 값을 지정해주자.
 	vo.setTitle(title);
 	vo.setRegUser(regUser);
 	vo.setContent(content);
@@ -3613,9 +3614,125 @@ readonly는 서버에 해당 input이 전송이 된다. 둘 다 화면 상에서
 %>
 ```
 
+<br>
+
+위처럼 하고 나서 다시 Sample 등록 화면에 가서 아무 글이나 쓰고 INSERT 버튼을 눌러주면 아래와 같이 제대로 입력이 <br>
+된 것을 확인할 수 있다. <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76137935-b9a90480-6085-11ea-8a5b-cae6ffd17dda.png)
+
 <br><br>
 
+### 수정 기능 구현(기능)
 
+<br>
+
+잠시 selectSample.jsp 에서 input 중에 name = "id" 인 것을 hidden 타입으로 수정해주고 기능 구현 updateSample_proc.jsp <br>
+를 작성하겠다. <br><br>
+
+selectSample.jsp 중...<br>
+
+```jsp
+<%-- 
+	<div class="form-group">
+	<label for="id">아이디</label>
+	<input type="text" name="id" class="form-control" id="id" disabled="disabled" value="<%= sample.getId() %>">
+	</div>
+--%>
+	<input type="hidden" name="id" value="<%= sample.getId() %>">
+```
+
+<br><br>
+
+updateSample_proc.jsp 작성 <br>
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+	
+	//1. 사용자 입력 정보 추출
+	request.setCharacterEncoding("UTF-8");
+	String id = request.getParameter("id");
+	String title = request.getParameter("title");
+	String regUser = request.getParameter("regUser");
+	String content = request.getParameter("content");
+	
+	// 2. DB 연동 처리
+	SampleVO vo = new SampleVO();
+	vo.setId(id);
+	vo.setTitle(title);
+	vo.setRegUser(regUser);
+	vo.setContent(content);
+	
+	SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+	sampleDAO.updateSample(vo);
+	
+	// 3. 화면 네비게이션
+	response.sendRedirect("selectSampleList.jsp");
+%>
+```
+
+결과 화면: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76138068-46a08d80-6087-11ea-8a3c-1c1935c47de3.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76138095-76e82c00-6087-11ea-8d1b-1e70704d71d8.png)
+
+<br><br>
+
+### 삭제 기능 구혀
+
+<br>
+
+잠시 selectSample.jsp 에서 DELETE 버튼에 대한 수정을 하고 , 삭제 기능인 deleteSample_proc.jsp 를 작성하겠다.
+
+<br>
+
+selectSample.jsp 수정. <br>
+
+```html
+<div class="container" style="margin-top:2em; text-align:right">
+	<a href="insertSample.jsp" class="btn btn-success" role="button">INSERT</a>
+	<!-- <a href="deleteSample_proc.jsp" class="btn btn-danger" role="button">DELETE</a> -->
+	<a href="deleteSample_proc.jsp?id=<%=sample.getId() %>" class="btn btn-danger" role="button">DELETE</a>
+	<a href="selectSampleList.jsp" class="btn btn-info" role="button">LIST</a>
+</div>
+```
+
+<br><br>
+
+deleteSample_proc.jsp 를 작성 <br>
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+	
+	//1. 사용자 입력 정보 추출
+	request.setCharacterEncoding("UTF-8");
+	String id = request.getParameter("id");
+	
+	// 2. DB 연동 처리
+	SampleVO vo = new SampleVO();
+	vo.setId(id);
+	
+	SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+	sampleDAO.deleteSample(vo);
+	
+	// 3. 화면 네비게이션
+	response.sendRedirect("selectSampleList.jsp");
+%>
+```
+
+<strong>이로서 Model1을 통한 CRUD를 구현해보았다.</strong> <br>
+이제는 Spring을 통한 Model2 방식의 CRUD 를 구현해보자.
 
 <br><br><br>
 
