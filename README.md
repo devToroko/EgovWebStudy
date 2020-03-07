@@ -3105,10 +3105,12 @@ public class SampleServiceClient {
 ## 로깅 처리
 
 <br><br>
-### 로깅 서비스의 중요 컴포넌트
-
 로깅은 시스템의 개발이나 운용 시 발생하는 애플리켕션 내부 정보를 파일이나 콘솔에 출력하여 시스템의 상황을 <br>
 쉽게 파악할 수 있도록 한다. <br><br>
+
+### 로깅 서비스의 중요 컴포넌트
+
+<br>
 
 | 컴포넌트 	| 설명                                                                                                      	|
 |----------	|-----------------------------------------------------------------------------------------------------------	|
@@ -3162,7 +3164,23 @@ public class SampleServiceClient {
 
 <br><br>
 
-책에서는 로그 레벨 변경을 통해서 테스트하는데, 굳이하지 않겠다. 하지만 하는 방법 정도만 간단하게 코드로 보이겠다. <br>
+### 간단한 로그 레벨 변경을 통해서 테스트
+
+<br>
+
+src/main/resources/log4j2.xml에서 egovframework 와 관련된 로그 레벨을 DEBUG로 고치고 ServiceImpl 클래스의 insert에 다음과 같은<br>
+작성해보자.
+
+
+```xml
+<!-- src/main/resources/log4j2.xml 의 일부 -->
+<!-- <Logger name="egovframework" level="INFO" additivity="false"> -->
+Logger name="egovframework" level="DEBUG" additivity="false">
+    <AppenderRef ref="console" />
+</Logger>
+```
+
+<br><br>
 
 ```java
 package egovframework.sample.service.impl;
@@ -3190,6 +3208,7 @@ public class SampleServiceImpl extends EgovAbstractServiceImpl implements Sample
 	}
 	
 	public void insertSample(SampleVO vo) throws Exception {
+		LOGGER.trace("TRACE");
 		LOGGER.debug("DEBUG");
 		LOGGER.info("DEBUG");
 		LOGGER.warn("DEBUG");
@@ -3242,7 +3261,9 @@ protected로 선언된 egovLogger() 메소드를 사용할 수 있다. <br><br>
 
 <br><br>
 
+실행결과: <br>
 
+![image](https://user-images.githubusercontent.com/51431766/76136327-852c4d00-6073-11ea-8315-c26cad6bbc88.png)
 
 <br><br><br>
 
