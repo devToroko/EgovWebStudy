@@ -39,8 +39,8 @@ public class SampleDAOJDBC implements SampleDAO {
 		pstmt = conn.prepareStatement(SAMPLE_INSERT);
 		pstmt.setString(1,vo.getId());
 		pstmt.setString(2, vo.getTitle());
-		pstmt.setString(2, vo.getRegUser());
-		pstmt.setString(3, vo.getContent());
+		pstmt.setString(3, vo.getRegUser());
+		pstmt.setString(4, vo.getContent());
 		pstmt.executeUpdate();
 		JDBCUtil.close(pstmt, conn);
 	}
