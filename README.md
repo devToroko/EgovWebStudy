@@ -718,7 +718,7 @@ public class SampleServiceImpl implements SampleService {
 
 <br><br><br>
 
-### 세터 인젝션 + 다형성 적용
+### 의존성주입(생성자 / SETTER) + 다형성 적용
 
 스프링 컨테이너는 XML 설정 파일에 드록된 클래스를 찾아서 객체를 생성할 때 기본적으로 
 <strong>매개변수가 없는 생성자</strong>을 호출한다. 하지만 컨테이너가 기본 생성자 말고
@@ -3102,16 +3102,157 @@ public class SampleServiceClient {
 
 <br><br><br>
 
-## 로깅 처리 (패스)
+## 로깅 처리
 
----
+<br><br>
+### 로깅 서비스의 중요 컴포넌트
+
+로깅은 시스템의 개발이나 운용 시 발생하는 애플리켕션 내부 정보를 파일이나 콘솔에 출력하여 시스템의 상황을 <br>
+쉽게 파악할 수 있도록 한다. <br><br>
+
+| 컴포넌트 	| 설명                                                                                                      	|
+|----------	|-----------------------------------------------------------------------------------------------------------	|
+| Appender 	| 어디에 출력할 것인지를 결정하는 컴포넌트                                                                  	|
+| Layout   	| Appender에 출력되는 로그의 포맷(일자,시간,클래스명 등)을 지정한다                                         	|
+| Logger   	| 애플리케이션 별로 사용할 로거(로거명 기반)를 정의하고 이에 대해 로그<br>레벨과 Appender를 지정할 수 있다. 	|
 
 <br><br>
 
+참고로 내가 작성한 src/main/resources/log4j2.xml 는 다음과 같다. <br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<Configuration>
+	<Appenders>
+		<Console name="console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d %5p [%c] %m%n" />
+		</Console>
+	</Appenders>
+	<Loggers>
+		 <Logger name="java.sql" level="INFO" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="egovframework" level="INFO" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Root level="INFO">
+        	<AppenderRef ref="console" />
+        </Root>
+	</Loggers>
+</Configuration>
+```
+
+<br><br>
+
+### 로그레벨
+
+<br>
+
+| 로그 레벨 	| 의미                                                                                                                     	|
+|-----------	|--------------------------------------------------------------------------------------------------------------------------	|
+| Error     	| 요청을 ㅓ리하는 중 일반적인 에러가 발생한 상태를 나타낸다.                                                               	|
+| WARN      	| 처리 가능한 문제이지만, 향후 시스템 에러의 원인이 될 수 있는<br>경고성 메시지를 나타내다.                                	|
+| INFO      	| 로그인, 상태변경과 같은 정보성 메시지를 나타낸다.                                                                        	|
+| DEBUG     	| 개발시 디버깅 용도로 사용할 메시지를  나타낸다.                                                                          	|
+| TRACE     	| log4j1.2.12 에서 신규 추가된 레벨로서, 디버그 레벨이 너무<br>광범위한 것을 해결하기 위해서 좀 더 상세한 상태를 나타낸다. 	|
+
+<br><br>
+
+책에서는 로그 레벨 변경을 통해서 테스트하는데, 굳이하지 않겠다. 하지만 하는 방법 정도만 간단하게 코드로 보이겠다. <br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.slf4j.Logger;		// 패키지 주의!
+import org.slf4j.LoggerFactory;
+
+@Service("sampleService")		// EgovAbstractServiceImpl 상속!
+public class SampleServiceImpl extends EgovAbstractServiceImpl implements SampleService {
+	
+	// 로거 생성, 나중에 성능을 고려해서라도 static으로 만드는 습관을 길들여두는 게 좋다.
+	// 종종 static으로 만들지 않는 사람도 있다, 물론 스프링 빈은 (주로) 싱글톤과 비슷한 생명주기라서 상관없지만
+	// VO나 DTO 같이 계속 생성, 제거가 반복되는 객체에서는 좋지 않다.
+	private static final Logger LOGGER = LoggerFactory.getLogger(SampleServiceImpl.class);
+	
+	@Resource(name="daoSpring")
+	private SampleDAO sampleDAO;
+	
+	public SampleServiceImpl() {
+		System.out.println("===> SampleServiceImpl 생성");
+	}
+	
+	public void insertSample(SampleVO vo) throws Exception {
+		LOGGER.debug("DEBUG");
+		LOGGER.info("DEBUG");
+		LOGGER.warn("DEBUG");
+		LOGGER.error("DEBUG");
+		
+		// 이하 생략
+	}
+	
+	// 생략
+	
+}
+```
+
+<br><br>
+
+EgovAbstractServiceImpl 추상 클래스를 상속받도록 했는데, 이 클래스는 비즈니스 메소드가 실행될 때 발생하는 <br>
+예외를 처리하기 위한 processException 메소드와 leaveaTrace() 메소드를 가지고 있다. 이외에도 Logger 생성없이 <br>
+protected로 선언된 egovLogger() 메소드를 사용할 수 있다. <br><br>
+
+그런데 비즈니스 클래스인 EgovAbstractServiceImpl 추상 클래스를 상속하게 되면 내부적으로 LeaveaTrace 객체를 내부적을 <br>
+사용하기 때문에 context-common.xml에 LeaveaTrace 클래스를 등록해야한다.
+
+<br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+	
+	<!-- <import resource="context-datasource.xml"/> -->
+
+	<context:component-scan base-package="egovframework">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<!-- <bean class="egovframework.sample.service.impl.SampleDAOJDBC" /> -->
+	
+	<!-- JdbcTemplate -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<bean id="leaveaTrace" class="egovframework.rte.fdl.cmmn.trace.LeaveaTrace"></bean>
+</beans>
+```
+
+<br><br>
+
+
+
+<br><br><br>
 
 # 스프링 MVC 설정
 
 <br><br>
+
+
+
+<br><br><br>
 
 ## Model2 아키텍처
 
@@ -3307,6 +3448,7 @@ web.xml 수정 <br>
 ```
 
 ## 스프링 MVC 적용
+
 
 <br>
 
