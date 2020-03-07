@@ -3267,9 +3267,79 @@ protected로 선언된 egovLogger() 메소드를 사용할 수 있다. <br><br>
 
 <br><br><br>
 
-# 스프링 MVC 설정
+# 스프링 MVC 
 
 <br><br>
+
+## Model 1 아키텍처
+
+<br>사용자와 커뮤니케이션을 위한 프레젠테이션 레이어를 개발하기 앞서 model1 아키텍처에 대해 알아보고 가자 <br>
+
+90~2000년대 초반까지 자바 웹 어플레이케이션은 model1 을 아키텍처를 사용했다. <br>
+model1 아키텍처는 JSP와 JavaBeans만 사용하여 웹을 개발하는 구조다. 그 구조는 아래와 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136477-4eefcd00-6075-11ea-90db-a7fd4aedecf1.png)
+
+<br><br>
+
+앞서서 우리가 만들었던 VO와 DAO 클래스가 바로 Model 아키텍처의 JavaBeans에 해당한다. <br>
+그리고 Controller의 의미는 JSP 내부의 자바코드(로직)를 의미하며, View는 말 그대로 화면의 외관(view)를 의미한다. <br>
+간단한 프로젝트는 이런 Model1 의 기반으로 만들어도 상관 없지만, 후에 큰 웹 프로젝트에서는 어림도 없다. <br><br>
+
+큰 웹 프로젝트는 Model2, 즉 MVC(Model View Controller) 아키텍처다. Model View Controller 요소로 기능을 분리하여 <br>
+관리하기 때문에, 큰 프로젝트에 맞다. <br><br>
+
+지금부터 model1 에서 시작해서 model2(MVC) 까지를 구현해보자. <br><br>
+
+
+### 인덱스 페이지 만들기
+
+<br> 파일 위치는 아래와 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136619-bf4b1e00-6076-11ea-8473-bb44d4af9ad1.png)
+
+<br><br>
+
+내용은 다음과 같다.
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<jsp:forward page="/selectSampleList.jsp"></jsp:forward>
+```
+
+<br><br>
+
+### 웹 프로젝트 실행
+
+<br><br>
+
+1\.  <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136658-31bbfe00-6077-11ea-8784-93d98ca6c971.png)
+
+<br><br>
+
+2\. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136694-d5a5a980-6077-11ea-8f4b-acbcddc55035.png)
+
+<br><br>
+
+3\. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136836-3c779280-6079-11ea-8768-01c272b25eea.png)
+
+<br><br>
+
+4\.<br>
+
+![image](https://user-images.githubusercontent.com/51431766/76136709-038aee00-6078-11ea-9bca-4d899681a20b.png)
+
+<br><br>
+
+5\. Run on Server 화면 창이 뜨면 그냥 Finish를 눌러준다. 매번 서버 실행마다 이 창을 보기 싫으면 밑에  <br>
+Always use this server when running this project 체크 박스를 체크해준다. <br>
 
 
 
