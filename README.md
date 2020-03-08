@@ -4882,11 +4882,132 @@ ex) <br><br>
 
 <br><br>
 
+사실 이미 이 주의사항을 언급하기 전에 손을 써놨기 때문에 우리는 현재 문제가 없는 것이다.
+우리는 forward 대신 redirect를 썼기 때문에 ViewResolver를 쓰나 안쓰나 결국은 redirect를 붙여줘야 한다.
 
 ---
 
-사실 이미 이 주의사항을 언급하기 전에 손을 써놨기 때문에 우리는 현재 문제가 없는 것이다.
+<br><br><br>
 
+# 어노테이션 이용한 스프링 MVC 개발
 
+여태까지 한 Controller에 대한 작업을 생각해보면 귀찮은 작업이 참 많다. 그리고 이런 작업을 하면서 xml에 쌓이는 \<bean\> <br>
+이 그렇게 반갑지는 않았다. 계속 이런 작업을 수행하면 개발자의 피로도는 극으로 오를 것이다. 그리고 xml의 내용이 복잡해진다. <br><br>
 
+이를 해결하기 위해서 어노테이션 기반의 스프링 MVC 개발 방법으로 해결해보자. <br><br>
+
+## \<context:component-scan\> 추가하기
+
+<br><br>
+
+1\. dispatcher-servlet.xml 파일 스크립트 추가 <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159691-62c72c00-6166-11ea-97c6-b3f06c9318fb.png)
+
+<br><br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<!-- <bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+				<prop key="/insertSample.do">insertSample</prop>
+				<prop key="/updateSample.do">updateSample</prop>
+				<prop key="/deleteSample.do">deleteSample</prop>
+			</props>
+		</property>
+	</bean> -->
+	
+	<!-- Controller 등록 -->
+	<!-- <bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController" />
+	<bean id="insertSample" class="egovframework.sample.web.InsertSampleController" />
+	<bean id="updateSample" class="egovframework.sample.web.UpdateSampleController" />
+	<bean id="deleteSample" class="egovframework.sample.web.deleteSampleController" /> -->
+	
+	<context:component-scan base-package="egovframework">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	
+	<!-- ViewResolver 등록 -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/sample/"/>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+</beans>
+```
+
+<br><br>
+
+## 컨트롤러를 POJO로 만들기
+
+<br>
+
+이전까지는 Controller 인터페이스를 구현해야 했다. 그리고  해당 인터페이스가 구현을 강제하는 handlerRequest() 메소드를 <br>
+구현해야했다. 하지만 이러한 방식은 스프링 프레임워크가 지향하는 POJO 스타일의 클래스가 아니다. <br>
+POJO 스타일을 위해서 implements Controller 를 삭제해야한다. 그리고 메소드를 재정의할 필요없이  <br>
+메소드 시그니처(리턴타입,이름,매개변수)를 마음대로 변경할 수 있어야 한다.
+
+<br>
+
+```java
+package egovframework.sample.web;
+
+import javax.servlet.http.HttpServletRequest;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class InsertSampleController {
+
+	public void insertSample(HttpServletRequest request) throws Exception {
+		System.out.println("샘플 등록 처리");
+		
+		// 1. 사용자 정보 추출
+		String title = request.getParameter("title");
+		String regUser = request.getParameter("regUser");
+		String content = request.getParameter("content");
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		vo.setTitle(title);
+		vo.setRegUser(regUser);
+		vo.setContent(content);
+		
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		sampleDAO.insertSample(vo);
+		
+	}
+	
+}
+```
+
+<br><br>
+
+## 어노테이션 적용하기
+
+1\. Controller 어노테이션 <br>
+
+```java
+package egovframework.sample.web;
+
+import org.springframework.stereotype.Controller;
+
+@Controller
+public class InsertSampleController {
+  ~ 생략 ~
+}
+```
 
