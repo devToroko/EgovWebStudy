@@ -4517,6 +4517,260 @@ public class InsertSampleController implements Controller {
 </beans>
 ```
 
+<br><br>
 
+그런데! 문제가 있다. 위에 작성한 대로 글을 새로 등록하고 목록 화면이 나온다. 그런데 그 상태에서 새로고침을 하면? <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76158332-41f7da00-6158-11ea-952b-457e9ffa97e5.png)
+
+<br><br>
+
+이것은 `mav.setViewName("selectSampleList.do");` 처럼 하면 내부적으로 forward를 사용하는 것을 의미한다. <br>
+즉 `mav.setViewName("selectSampleList.do");` 는 `mav.setViewName('forward:/selectSampleList.do");` 와 같은 것이다 <br>
+새글 등록과 같은 작업은 위처럼 forward를 통해 화면을 보일 경우 보안에 큰 구멍이 생긴다. <br>
+저 상태에서 무한히 새로 고침을 반복하면 우리가 흔히 아는 "도배"가 되는 것이다. <br>
+이것을 피하기 위해서는 Post 를 통해서 서버에서 작업이 완료된 이후에 send Redirect를 해줘야한다. <br>
+그러면 새로 고침을 해도 큰 문제가 없다. <br>
+
+이를 이해서 `mav.setViewName("selectSampleList.do");` 를 `mav.setViewName("redirect:/selectSampleList.do");` 로 수정하자. <br>
+
+이제 새로고침을 해도 아까와 같은 메시지가 안 뜨는 것을 볼 수 있다. <br><br><br>
+
+
+**수정 구현하기**
+
+1\. 화면 수정 <br>
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 상세</title>
+</head>
+<body>
+	<div class="container">
+	  <h2>SAMPLE 상세</h2>
+	  <p>SampleVO의 상세한 내용입니다.</p><br>
+	  
+	  <%-- action 속성값을 수정 --%>
+	  <form action="updateSample.do" method="post">
+	    <input type="hidden" name="id" value="${sample.id}">
+	    
+	    <div class="form-group">
+	      <label for="title">제목</label>
+	      <input type="text" name="title" class="form-control" id="title" value="${sample.title}">
+	    </div>
+	    <div class="form-group">
+	      <label for="regUser">작성자</label>
+	      <input type="text" name="regUser" class="form-control" id="regUser" value="${sample.regUser}" >
+	    </div>
+	    <div class="form-group">
+	      <label for="content">내용</label>
+	      <textarea class="form-control" name="content">${sample.content}</textarea>
+	    </div>
+	    <br>
+	        등록일 : ${sample.regDate}
+		<br><br>
+	    <button type="submit" class="btn btn-default">UPDATE</button>
+	  </form>
+	</div>
+	
+	<div class="container" style="margin-top:2em; text-align:right">
+		  <a href="insertSample.jsp" class="btn btn-success" role="button">INSERT</a>
+		  <a href="deleteSample.do?id=${sample.id}" class="btn btn-danger" role="button">DELETE</a>
+		  <a href="selectSampleList.do" class="btn btn-info" role="button">LIST</a>
+	</div>
+</body>
+</html>
+```
+
+<br><br>
+
+2\. 컨트롤러 구현 <br>
+
+```java
+package egovframework.sample.web;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class UpdateSampleController implements Controller {
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 수정 처리");
+		
+		// 1. 사용자 정보 추출
+		String id = request.getParameter("id");
+		String title = request.getParameter("title");
+		String regUser = request.getParameter("regUser");
+		String content = request.getParameter("content");
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		vo.setId(id);
+		vo.setTitle(title);
+		vo.setRegUser(regUser);
+		vo.setContent(content);
+		
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		sampleDAO.updateSample(vo);
+		
+		// 3. 화면 네비게이션
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("redirect:/selectSampleList.do");
+		return mav;
+	}
+	
+}
+```
+
+<br><br>
+
+3\. 스프링 설정 수정 <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+				<prop key="/insertSample.do">insertSample</prop>
+				<prop key="/updateSample.do">updateSample</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Controller 등록 -->
+	<bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController" />
+	<bean id="insertSample" class="egovframework.sample.web.InsertSampleController" />
+	<bean id="updateSample" class="egovframework.sample.web.UpdateSampleController" />
+</beans>
+```
+
+<br><br><br>
+
+**삭제 구현하기**
+
+<br>
+
+1\. 컨트롤러 구현 <br>
+
+
+```java
+package egovframework.sample.web;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class deleteSampleController implements Controller{
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 삭제 처리");
+		
+		// 1. 사용자 정보 추출
+		String id = request.getParameter("id");
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		vo.setId(id);
+		
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		sampleDAO.deleteSample(vo);
+		
+		// 3. 화면 네비게이션
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("redirect:/selectSampleList.do");
+		return mav;
+	}
+	
+}
+```
+
+<br><br>
+
+2\. 스프링 설정 수정 <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+				<prop key="/insertSample.do">insertSample</prop>
+				<prop key="/updateSample.do">updateSample</prop>
+				<prop key="/deleteSample.do">deleteSample</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Controller 등록 -->
+	<bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController" />
+	<bean id="insertSample" class="egovframework.sample.web.InsertSampleController" />
+	<bean id="updateSample" class="egovframework.sample.web.UpdateSampleController" />
+	<bean id="deleteSample" class="egovframework.sample.web.deleteSampleController" />
+</beans>
+```
+
+<br>
+
+이로써 우리는 \*\_proc.jsp 을 대체할 로직도 Controller 객체로 옮겼다. 이제 모든 \*\_proc.jsp 를 지우자 <br>
+
+
+<br><br>
+
+여태까지 만들어온 Controller를 보면 아래와 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76158883-fea06a00-615d-11ea-99ae-ded44ede554b.png)
+
+<br><br>
+
+그리고 여태 사용한 jsp 파일은 아래와 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76158928-6f478680-615e-11ea-84aa-ccf476601225.png)
+
+<br><br><br>
+
+## ViewResolver 활용하기
+
+<br>
 
 
