@@ -4244,7 +4244,7 @@ selectSampleList.jsp 수정 <br>
 	    </tbody>
 	  </table>
 	<br>
-	<a class="btn btn-success" href="insertSample.do">샘플 등록</a>	  
+	<a class="btn btn-success" href="insertSample.jsp">샘플 등록</a>	  
 	  
 	</div>													
 </body>
@@ -4377,7 +4377,7 @@ dispatcher-servlet.xml을 다음과 같이 추가작업 <br>
 	</div>
 	
 	<div class="container" style="margin-top:2em; text-align:right">
-		  <a href="insertSample.do" class="btn btn-success" role="button">INSERT</a>
+		  <a href="insertSample.jsp" class="btn btn-success" role="button">INSERT</a>
 		  <a href="deleteSample_proc.do?id=${sample.id}" class="btn btn-danger" role="button">DELETE</a>
 		  <a href="selectSampleList.do" class="btn btn-info" role="button">LIST</a>
 	</div>
