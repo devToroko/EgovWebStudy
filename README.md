@@ -4773,4 +4773,119 @@ public class deleteSampleController implements Controller{
 
 <br>
 
+여태까지 한 것을 보면 어느정도 완성된 거 같지만, 사실 아직 스프링 MVC 에서 적용안 한 요소가 하나 있다. <br>
+바로 ViewResolver이다. 그런데 만들기 이전에 왜 필요한지 생각을 하자. <br><br>
+
+ex) <br>
+만약 클라이언트가 selectSampleList.do  를 통해서 요청을 한 것이 아니라, selectSampleList.jsp를 통해서 jsp를 직접 <br>
+호출하면 어떤 일이 생길까? selectSampleList.do 에 매핑된 Controller 의 로직을 수행하지 않고 바로 selectSampleList.jsp로 <br>
+가기 때문에 화면에는 어떠한 목록도 보이지 않을 것이다. 아래와 같이 말이다 <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159025-a5d1d100-615f-11ea-874a-6ceb2fcee6e8.png)
+
+<br><br>
+
+**JSP 감추기** <br>
+
+이런 문제를 해결하기 위해서는 JSP 파일을 직접적으로 호출하지 못하게 해야한다. 그리고 다행히도 WEB-INF 파일 내에 넣은 <br>
+자원들은 클라이언트의 직접적인 요청을 거부하기 때문에 이를 이용하면 된다. <br><br>
+
+직접 호출을 거절해야하는 jsp 파일들을 WEB-INF/sample/ 에 넣도록 하자. 다음과 같이 말이다 <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159086-2abcea80-6160-11ea-99d4-1241aa64cb1b.png)
+
+<br>
+
+브라우저의 직접 접근은 막았다. 그리고 ViewResolver를 사용하면 이제 Controller를 거쳐서 jsp 페이지를 열도록 강제할 수 있다.<br><br>
+
+**ViewResolver 등록** <br>
+
+dispatcher-servlet.xml 에 InternalResourceViewResolver 클래스를 추가한다. <br>
+
+```xml
+<!-- ~생략~ -->
+<!-- ViewResolver 등록 -->
+<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	<property name="prefix" value="/WEB-INF/sample/"/>
+	<property name="suffix" value=".jsp"></property>
+</bean>
+```
+
+<br><br>
+
+---
+잠깐! 궁금한 것들이 나와서 자세히 봤다
+
+<br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159212-63a98f00-6161-11ea-822c-55b3fd892cfc.png)
+
+<br>
+
+위에서 보면 알겠지만 우리가  `mav.setViewName("redirect:/selectSampleList.do");` 처럼 하면 우리가 정한 ServletContext<br>
+가 앞에 자동으로 붙는다.
+
+---
+
+<br><br>
+
+**Controller 클래스 수정하기** <br>
+
+SelectSampleListController 의 코드를 약간만 수정해주자. <br>
+
+```java
+	ModelAndView mav = new ModelAndView();
+	mav.addObject("sampleList",sampleList);	
+	mav.setViewName("selectSampleList"); // .do가 사라졌다!
+	return mav;
+```
+
+<br><br>
+
+SelectSampleController 도 코드를 약간만 수정해주자. <br>
+
+```java
+	ModelAndView mav = new ModelAndView();
+	mav.addObject("sample", sample);
+	mav.setViewName("selectSample");
+	return mav;
+```
+
+<br><br>
+
+이러면 끝이다. 그런데! 한 가지 주의할 점이 있다. <br>
+
+
+---
+
+우리가 앞서 했던 .jsp 에서 .do 로 바꾼 것들이 있다. 현재 우리는 ViewResolver를 사용함으로 단순하게 selectSampleList.do 라고 하면 <br>
+/WEB-INF/sample/selectSampleList.do.jsp (?) 파일을 찾게 된다. 예전처럼 selectSampleList.do 를 통해서 Controller를 호출하고 <br>
+최종 페이지를 Controller가 결정하게 하기 위해서는 **반드시** <br>
+
+`mav.setViewName("selectSampleList.do");` ==> `mav.setViewName("forward:selectSampleList.do");` 라고 명시적으로 꼭 써줘야한다. <br>
+ViewResolver를 사용하지 않을 때는 명시하지 않아도 상관 없었지만, 쓰는 시점에서는 꼭 신경 써야한다. <br><br>
+
+ex) <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159482-33172480-6164-11ea-8002-0d8dc09434d1.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159486-488c4e80-6164-11ea-941d-5560fb55c9e1.png)
+
+INSERT 클릭!
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76159499-783b5680-6164-11ea-972b-1f0bb576bd79.png)
+
+<br><br>
+
+
+---
+
+사실 이미 이 주의사항을 언급하기 전에 손을 써놨기 때문에 우리는 현재 문제가 없는 것이다.
+
+
+
 
