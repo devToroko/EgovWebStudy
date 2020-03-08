@@ -4191,11 +4191,11 @@ selectSampleList.jsp 도 수정해준다.
 
 **EL과 JSTL을 이용한 화면 처리**
 
-여전히 jsp파일에 자바코드가 보인다. 이것을 EL과 JSTL로 수정해보자.
-\
+<br>
 
-selectSampleList.jsp 수정
-\
+여전히 jsp파일에 자바코드가 보인다. 이것을 EL과 JSTL로 수정해보자. <br>
+
+selectSampleList.jsp 수정 <br>
 (참고로 jsp 상단에 `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>` 를 넣어줘야 한다!)
 
 ```jsp
@@ -4205,12 +4205,7 @@ selectSampleList.jsp 수정
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%
 
-	// HttpServletRequest(Model)에 저장된 정보를 꺼낸다.	 
-	@SuppressWarnings("unchecked")
-	List<SampleVO> sampleList = (List<SampleVO>) request.getAttribute("sampleList");
-%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -4237,25 +4232,291 @@ selectSampleList.jsp 수정
 	      </tr>
 	    </thead>
 	    <tbody>
-	    <c:forEach var="sample" items="${selectList }">
+	    <c:forEach var="sample" items="${sampleList}">
 	    	<tr>
-		        <td><a href="selectSample.jsp?id=${sample.getId()}">${ sample.getId()}</a></td>
-		        <td>${sample.getTitle() }</td>
-		        <td>${sample.getRegUser()}</td>
-		        <td>${sample.getRegDate() }</td>
+			<%-- 참고로 selectSample.jsp --> .do 로 바꿨다. --%>
+		        <td><a href="selectSample.do?id=${sample.id}">${sample.id}</a></td>
+		        <td>${sample.title}</td>
+		        <td>${sample.regUser}</td>
+		        <td>${sample.regDate}</td>
 	     	</tr>
 	    </c:forEach>
 	    </tbody>
 	  </table>
 	<br>
-	<a class="btn btn-success" href="insertSample.jsp">샘플 등록</a>	  
+	<a class="btn btn-success" href="insertSample.do">샘플 등록</a>	  
 	  
 	</div>													
 </body>
 </html>
 ```
 
+<br><br>
+
+**상세 조회 기능 구현**
+
+<br><br>
+
+1\. 컨트롤러 구현 <br>
+
+selectSampleController.java 생성 <br>
+
+```java
+package egovframework.sample.web;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class SelectSampleController implements Controller {
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 상세 조회 처리");
+		
+		// 1. 사용자 입력 정보 추출
+		String id = request.getParameter("id");
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		vo.setId(id);
+		
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		SampleVO sample = sampleDAO.selectSample(vo);
+		
+		// 3. 검색 결과를 ModelAndView 에 저장하여 리턴한다.
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("sample", sample);
+		mav.setViewName("selectSample.jsp");
+		return mav;
+	}
+	
+}
+
+```
+
+<br><br>
+
+2\. HandlerMapping 등록 <br>
+
+dispatcher-servlet.xml을 다음과 같이 추가작업 <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Controller 등록 -->
+	<bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController"></bean>
+	
+</beans>
+```
+<br><br>
+
+3\. selectSample.jsp 수정 <br>
+
+```jsp
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 상세</title>
+</head>
+<body>
+	<div class="container">
+	  <h2>SAMPLE 상세</h2>
+	  <p>SampleVO의 상세한 내용입니다.</p><br>
+	  
+	  <form action="updateSample_proc.do" method="post">
+	    <input type="hidden" name="id" value="${sample.id}">
+	    
+	    <div class="form-group">
+	      <label for="title">제목</label>
+	      <input type="text" name="title" class="form-control" id="title" value="${sample.title}">
+	    </div>
+	    <div class="form-group">
+	      <label for="regUser">작성자</label>
+	      <input type="text" name="regUser" class="form-control" id="regUser" value="${sample.regUser}" >
+	    </div>
+	    <div class="form-group">
+	      <label for="content">내용</label>
+	      <textarea class="form-control" name="content">${sample.content}</textarea>
+	    </div>
+	    <br>
+	        등록일 : ${sample.regDate}
+		<br><br>
+	    <button type="submit" class="btn btn-default">UPDATE</button>
+	  </form>
+	</div>
+	
+	<div class="container" style="margin-top:2em; text-align:right">
+		  <a href="insertSample.do" class="btn btn-success" role="button">INSERT</a>
+		  <a href="deleteSample_proc.do?id=${sample.id}" class="btn btn-danger" role="button">DELETE</a>
+		  <a href="selectSampleList.do" class="btn btn-info" role="button">LIST</a>
+	</div>
+</body>
+</html>
+```
+
+<br><br>
+
+**등록 구현하기**
+
+<br>
+
+1\. 화면 수정
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 등록</title>
+</head>
+<body>
+	<div class="container">
+	  <h2>SAMPLE 등록</h2>
+	  <p>SampleVO를 등록하는 화면입니다.</p><br>
+	  
+	  <%-- .jsp --> .do 로 수정 --%>
+	  <form action="insertSample.do" method="post">
+		<div class="form-group">
+			<label for="title">제목</label>
+			<input type="text" name="title" class="form-control" id="title" placeholder="제목을  입력하세요" required="required">
+		</div>
+		<div class="form-group">
+	      <label for="regUser">작성자</label>
+	      <input type="text" name="regUser" class="form-control" id="regUser" placeholder="작성자를 입력하세요" required="required">
+	    </div>
+	    <div class="form-group">
+	      <label for="content">내용</label>
+	      <textarea class="form-control" name="content"></textarea>
+	    </div>
+	    <br><br>
+	    <button type="submit" class="btn btn-success">INSERT</button>
+	    
+	   	<%-- .jsp --> .do 로 수정 --%>
+	    <a href="selectSampleList.do" class="btn btn-info" role="button">LIST</a>
+	  </form>
+	</div>
+		
+</body>
+</html>
+```
+
+<br><br>
+
+2\. InsertSampleController 추가
+
+```java
+package egovframework.sample.web;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class InsertSampleController implements Controller {
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 등록 처리");
+		
+		// 1. 사용자 정보 추출
+		String title = request.getParameter("title");
+		String regUser = request.getParameter("regUser");
+		String content = request.getParameter("content");
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		vo.setId("SAMPLE-00008");//임시값!
+		vo.setTitle(title);
+		vo.setRegUser(regUser);
+		vo.setContent(content);
+		
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		sampleDAO.insertSample(vo);
+		
+		// 3. 화면 네비게이션
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("selectSampleList.do");
+		
+		return mav;
+	}
+	
+}
+```
+
+여기서 주의해서 봐야 되는것은 `mav.setViewName("selectSampleList.do");` 이다. <br>
+여태까지는 .jsp 라는 이름으로 View를 set했지만 지금은 .do 로 세팅했다. <br>
+만약에 selectSampleList.jsp 화면으로 바로 이동하면 목록이 안 보인다. <br>
+
+<br><br>
+
+2\. 핸들러 등록 <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+				<prop key="/insertSample.do">insertSample</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- Controller 등록 -->
+	<bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController"></bean>
+	<bean id="insertSample" class="egovframework.sample.web.InsertSampleController"></bean>
+</beans>
+```
 
 
-  	
+
 
