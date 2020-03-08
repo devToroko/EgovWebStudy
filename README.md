@@ -4865,17 +4865,18 @@ SelectSampleController 도 코드를 약간만 수정해주자. <br>
 `mav.setViewName("selectSampleList.do");` ==> `mav.setViewName("forward:selectSampleList.do");` 라고 명시적으로 꼭 써줘야한다. <br>
 ViewResolver를 사용하지 않을 때는 명시하지 않아도 상관 없었지만, 쓰는 시점에서는 꼭 신경 써야한다. <br><br>
 
-ex) <br>
+ex) <br><br>
 
-![image](https://user-images.githubusercontent.com/51431766/76159482-33172480-6164-11ea-8002-0d8dc09434d1.png)
+![image](https://user-images.githubusercontent.com/51431766/76159517-cbada480-6164-11ea-8e7b-80679cad3507.png)
 
-<br><br>
+<br><br><br>
 
-![image](https://user-images.githubusercontent.com/51431766/76159486-488c4e80-6164-11ea-941d-5560fb55c9e1.png)
+![image](https://user-images.githubusercontent.com/51431766/76159537-057eab00-6165-11ea-8ce3-a98ac436d432.png)
 
-INSERT 클릭!
+<br>
+**INSERT 클릭!**
 
-<br><br>
+<br><br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/76159499-783b5680-6164-11ea-972b-1f0bb576bd79.png)
 
