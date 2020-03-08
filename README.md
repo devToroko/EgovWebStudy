@@ -3990,6 +3990,8 @@ web.xml 수정 <br>
 </web-app>
 ```
 
+<br><br><br>
+
 ## 스프링 MVC 적용
 
 지금까지 스프링 MVC를 적용하기 위해서 필요한 설정을 봤다. 이제 본격적으로 여태 만들었던 Model1을 Model2로 바꿔보자.
@@ -4073,8 +4075,9 @@ dispatcher-servlet.xml 파일에 HandlerMapping을 통해 적절히 매핑을 �
 </beans>
 ```
 
-SimpleUrlHandlerMapping 객체는 Setter Injection 으로 Properties 객체를 주입하고 있다. 그리고 의존성 주입된 Properties 
-컬렉션에는 /selectSampleList.do 경로 요청에 대해 아이디가 selectSampleList인 객체가 동작하도록 매핑했다.
+SimpleUrlHandlerMapping 객체는 Setter Injection 으로 Properties 객체를 주입하고 있다. 
+그리고 의존성 주입된 Properties 컬렉션에는 /selectSampleList.do 경로 요청에 대해 아이디가 
+selectSampleList인 객체가 동작하도록 매핑했다.
 그리고 아래 Controller 의 bean id 값은 반드시 Properties의 값과 같은 이름이어야 한다.
 
 <br><br>
@@ -4104,7 +4107,7 @@ SimpleUrlHandlerMapping 객체는 Setter Injection 으로 Properties 객체를 �
 따라서 세션에 많은 정보를 넣는 것은 서버에 큰 부담을 준다. 그렇기 때문에 세션이 아닌 **HttpServletRequest 객체에 저장
 해야 하며, 스프링의 ModelAndView 가 이러한 기능을 제공한다**.
 
-<br>
+<br><br>
 
 SelectSampleListController 클래스를 다음과 같이 수정한다.
 
@@ -4148,7 +4151,7 @@ public class SelectSampleListController implements Controller{
 }
 ```
 
-<br>
+<br><br>
 
 selectSampleList.jsp 도 수정해준다.
 
@@ -4161,22 +4164,21 @@ selectSampleList.jsp 도 수정해준다.
 %>
 ```
 
-<br>
+<br><br>
 
-**결과** : \
+**결과** : <br>
 
 ![image](https://user-images.githubusercontent.com/51431766/76157670-2b995080-614f-11ea-928d-d6b1ae303a0a.png)
 
-\
-\
+<br><br>
 
 지금까지의 내용을 정리하면 다음과 같다.
 
 ![정리](https://user-images.githubusercontent.com/51431766/76157609-48815400-614e-11ea-81ec-7da430690467.png)
 
-- 클라이언트가 /selectSampleList.do 요청을 전송하면 DsipatcherServlet이 요청을 받고
-- SimpleUrlHandlerMapping 을 통해 요청을 처리할 SelectSampleListController 을 검색한다.
-- DispatcherServlet 은 검색된 SelectSampleListController를 실행하여 요청을 처리한다.
+- 클라이언트가 /selectSampleList.do 요청을 전송하면 DsipatcherServlet이 요청을 받고 
+- SimpleUrlHandlerMapping 을 통해 요청을 처리할 SelectSampleListController 을 검색한다. 
+- DispatcherServlet 은 검색된 SelectSampleListController를 실행하여 요청을 처리한다. 
 - SelectSampleListController 는 검색 결과인 List<SampleVO> 와 selectSampleList.jsp 이름을 ModelAndView객체에 저장하고 리턴
 - DispatcherSevlet은 selectSampleList.jsp 를 실항한다. selectSampleList.jsp 에서는 ModelAndView를 통해 HttpServletRequest
   에 저장된 데이터로 목록 화면을 구성한다.
