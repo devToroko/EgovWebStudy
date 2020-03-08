@@ -3832,80 +3832,59 @@ index.jsp를 수정해보고 실행해보자. 어떤 결과를 볼 수 있을까
 
 <br><br>
 
+이유를 차근차근 알아보자 <br>
+서블릿 컨테이너에  \*.do 요청이 최초로 들어왔을 때 해당 요청을 처리해주는 서블릿, 즉 DispatcherServlet을 생성하고 <br>
+이 서블릿이 생성될 때 자동으로 실행되는 init() 메서드가 내부에서 **스프링 컨테이너** 를 구동한다. 
+이때 클라이언트의 요청에 대한 작업들은 DispatcherServlet의 init() 메서드에서 만든 스프링 컨테이너에 있는 <br>
+**HandlerMapping, Controller, ViewResolver** 객체(Bean)들이 DispatcherServlet와 함께 상호작용하여 처리하게 된다. <br><br>
 
-
-
-위처럼만 하고 실행하면 당연히 안된다.<br>
-이유는 서블릿 컨테이너에  \*.do 요청이 들어왔을 때 서블릿 컨테이너가 DispatcherServlet을 생성한다.<br>
-그리고 곧바로 DispatcherServlet의 init() 메서드 (Servlet이 생성되는 이후에 곧바로 실행되는 메서드) <br>
-내에서 XmlWebApplicationContext ( 스프링 컨테이너 ) 를 생성한다. <br><br>
-
-하지만 DispatcherServlet 혼자서는 클라이언트 요청을 처리하지 못하고 , <strong>반드시 HandlerMapping, Controller <br>
-ViewResolver </strong> 객체들과 상호작용해야한다. 그리고 이 3개의 객체들은 일반 클래스이며, 스프링 컨테이너가 관리해야할<br>
-객체들이다.  <br><br>
+그런데 지금 우리는 **HandlerMapping, Controller, ViewResolver** 객체를 스프링 컨테이너에 생성하는 것은 결국 스프링
+**설정파일**인데, 현재 그런 것을 만든 적이 없으니 지금 같은 에러가 나올 수 밖에 없는 것이다. 지금까지 설명을 정리해보자 <br>
 
 ![image](https://user-images.githubusercontent.com/51431766/76150370-1a1f5c80-60ed-11ea-8ab4-982c6d3f30f3.png)
 
+(요약: 스프링 컨테이너가 기본으로 필요한 설정파일(xml)이 없어서 이 사단이 난 것이다)
+
+그러면 이제 스프링 설정파일을 만드는 방법과 내부에 설정해야할 Bean 객체를 설정을 완성해보자.
+
+---
+
+### 스프링 설정 파일
+
+앞서 말했듯이 DispatcherServlet은 Spring 컨테이너가 구동할 대, web.xml 파일에 등록된 서블릿 이름 뒤에 -servlet.xml을
+붙여서 스프링 설정 파일을 찾는다. 찾는 시작점은 WEB-INF/ 부터 시작해서 찾는다.
+
+그러면 한번 WEB-INF/action-servlet.xml 을 생성해보자. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76157049-fd177780-6146-11ea-8337-82af90c06b1b.png)
+
+(New ==> Spring Bean Configuration File 을 선택하여 생성함)
+
+<br><br>
+
+서버를 실행하면...?
+
+![image](https://user-images.githubusercontent.com/51431766/76157076-7a42ec80-6147-11ea-92fe-f5062276fdd1.png)
+
+500 에러는 이제 안 뜨지만 404 에러가 뜬다. 이것에 대한 해결은 잠시 보류다.
+
 <br>
 
-그러면  HandlerMapping, Controller , ViewResolver 를 스프링 컨테이너가 사용할 수 있도록 해보자. <br><br>
-
-
-우리가 앞서 만들었던
-
-```xml
-<servlet>
-	<servlet-name>action</servlet-name>
-	<servlet-class>
-		org.springframework.web.servlet.DispatcherServlet
-	</servlet-class>
-</servlet>
-```
-
-에는 \<servlet-name\>action\</servlet-name\> 이 있다. 여기서 "action" 이라는 이름 값이 있는데 <br>
-이 이름 값에 "-servlet"을 붙이면, 그게 바로 DispatcherServlet이 참조하게 될 스프링 xml 설정 파일의 이름이다. <br>
-그리고 파일의 위치는 기본적으로 WEB-INF 폴더 내이다. <br>
-
-### WEB-INF/action-servlet.xml 파일 생성 (Spring Bean Configuration File으로 생성)
-
-![image](https://user-images.githubusercontent.com/51431766/75683662-eacab300-5cda-11ea-9ffa-68277297d683.png)
-
-(참고로 action-servlet.xml의 내용물은 작성하지 않은 상태다) <br><br>
-
-
-### Tomcat Web Module Path 설정 변경
-
-![image](https://user-images.githubusercontent.com/51431766/75683831-26657d00-5cdb-11ea-9886-26e05a436fbd.png) 
+그런데 이렇게 Default 경로와 Default 설정파일 이름을 쓰는 경우는 흔치 않다. 주로 개발자들이 원하는 위치에 
+원하는 이름으로 설정 파일을 만드는 경우가 많다. 
 
 <br><br>
 
-### index.jsp
-```jsp
-<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%>
-<jsp:forward page="/selectSampleList.do" />
-```
-
-
-<br><br>
-
-### 서버 실행
-그리고 실행하면 다음과 같은 로그를 볼 수 있다. <br>
-
-![image](https://user-images.githubusercontent.com/51431766/75683967-5b71cf80-5cdb-11ea-8a46-9760c1f382a5.png)
-![image](https://user-images.githubusercontent.com/51431766/75684162-983dc680-5cdb-11ea-8ae8-6e8776d53cdf.png)
-
-비록 404 에러가 나지만 그래도 서블릿이 성공적으로 생성된 것을 확인할 수 있다.
-
-<br><br>
 
 ### 스프링 설정파일 변경
 
 <br>
 
 위에서 처럼 DispatcherServlet이 default로 주는 설정파일 위치와 이름을 사용하는 것도 좋지만, <br>
-설정파일의 이름을 바꾸거나 위치를 변경할 수도 있다. 이때 사용하는 것이 DispatcherServlet의 초기화 파라미터다 <br><br>
+설정파일의 이름을 바꾸거나 위치를 변경할 수도 있다. 이때 사용하는 것이 **DispatcherServlet의 초기화 파라미터다.**
 
-WEB-INF/config/dispatcher-servlet.xml  로 설정파일의 위치와 이름을 바꾸고, DispatcherServlet이 스프링 컨테이너를 <br>
+실습해보자. 일단 우리가 앞서 만들었던 action-servlet.xml 파일을 삭제하고 나서,
+**WEB-INF/config/dispatcher-servlet.xml** 로 설정파일의 위치와 이름을 바꾸고, DispatcherServlet이 스프링 컨테이너를 <br>
 생성할 때 사용토록 해보자. <br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/75684630-86a8ee80-5cdc-11ea-88ef-085317a77909.png)
@@ -3915,7 +3894,21 @@ WEB-INF/config/dispatcher-servlet.xml  로 설정파일의 위치와 이름을 �
 web.xml 수정 <br>
 
 ```xml
-<servlet>
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+  <display-name>EgovWebTemplateMk</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  
+  
+  
+  <servlet>
   	<servlet-name>action</servlet-name>
   	<servlet-class>
   		org.springframework.web.servlet.DispatcherServlet
@@ -3924,7 +3917,14 @@ web.xml 수정 <br>
   		<param-name>contextConfigLocation</param-name>
   		<param-value>/WEB-INF/config/dispatcher-servlet.xml</param-value>
   	</init-param>
-</servlet>
+  	<load-on-startup>1</load-on-startup>
+  </servlet>
+  
+  <servlet-mapping>
+  	<servlet-name>action</servlet-name>
+  	<url-pattern>*.do</url-pattern>
+  </servlet-mapping>
+</web-app>
 ```
 <br>
 
@@ -3935,6 +3935,9 @@ web.xml 수정 <br>
 <br><br>
 
 ### 인코딩 설정
+
+현재 상태로 계속 실행하면 클라이언트에서 서버로 오는 문자의 인코딩이 깨질 확률이 크다. 
+이를 해결하기 위해서 다음과 같이 web.xml에 추가적으로 작성하자.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -3967,6 +3970,7 @@ web.xml 수정 <br>
   	<url-pattern>*.do</url-pattern>
   </servlet-mapping>
   
+	
   <filter>
   	<filter-name>characterEncoding</filter-name>
   	<filter-class>
@@ -3988,11 +3992,14 @@ web.xml 수정 <br>
 
 ## 스프링 MVC 적용
 
+지금까지 스프링 MVC를 적용하기 위해서 필요한 설정을 봤다. 이제 본격적으로 여태 만들었던 Model1을 Model2로 바꿔보자.
 
 <br>
 
+**목록 기능 개발**
 
-### 컨트롤러를 구현해보자.
+1\. 컨트롤러 구현 : 우리가 기존에 만들었던 selectSampleList.jsp 파일에서 소스를 복사해오면 쉽다.
+
 
 ```java
 package egovframework.sample.web;
@@ -4035,9 +4042,14 @@ public class SelectSampleListController implements Controller{
 }
 ```
 
+보면 알겠지만 Controller 인터페이스를 구현하고 있다. 그리고 반환값이 ModelAndView 라는 점도 잘 봐놓자.
+Model에는 우리가 보내고 싶은 값들을, View에는 우리가 보여주고 싶은 jsp를 넣어주면 된다.
+
 <br><br>
 
-### HandlerMapping 등록
+2\. HandlerMapping 등록 : 클라이언트의 /selectSampleList.do 요청에 대해서 동작하게 하려면스프링 설정 파일인 
+dispatcher-servlet.xml 파일에 HandlerMapping을 통해 적절히 매핑을 해줘야 한다.
+
 
 <br>
 
@@ -4061,10 +4073,187 @@ public class SelectSampleListController implements Controller{
 </beans>
 ```
 
+SimpleUrlHandlerMapping 객체는 Setter Injection 으로 Properties 객체를 주입하고 있다. 그리고 의존성 주입된 Properties 
+컬렉션에는 /selectSampleList.do 경로 요청에 대해 아이디가 selectSampleList인 객체가 동작하도록 매핑했다.
+그리고 아래 Controller 의 bean id 값은 반드시 Properties의 값과 같은 이름이어야 한다.
+
 <br><br>
+
+3\. JSP 화면 수정
+
+```jsp
+<%
+
+	// 세션에 저장된 정보를 꺼낸다.	 
+	 @SuppressWarnings("unchecked")
+	 List<SampleVO> sampleList = (List<SampleVO>) session.getAttribute("sampleList");
+
+%>
+```
 
 결과 <br>
 
-![image](https://user-images.githubusercontent.com/51431766/75887401-17aecf80-5e6d-11ea-900d-c6563d037cc3.png)
+![image](https://user-images.githubusercontent.com/51431766/76157497-e3792e80-614c-11ea-9fc2-1261ecc29659.png)
 
 <br><br>
+
+4\. HttpServletRequest 에 검색 결과 저장하기
+
+현재는 우리가 클라이언트에 전송하는 정보를 세션에 넣어서 보낸다. 알다시피 세션은 웹 클라이언트인 브라우저 하나당
+서버 메모리에 하나씩 생성되어 클라이언트의 상태 정보를 유지한다.
+따라서 세션에 많은 정보를 넣는 것은 서버에 큰 부담을 준다. 그렇기 때문에 세션이 아닌 **HttpServletRequest 객체에 저장
+해야 하며, 스프링의 ModelAndView 가 이러한 기능을 제공한다**.
+
+<br>
+
+SelectSampleListController 클래스를 다음과 같이 수정한다.
+
+
+```java
+package egovframework.sample.web;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+public class SelectSampleListController implements Controller{
+
+	@Override
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		System.out.println("샘플 목록 검색 처리");
+		
+		// 1. 사용자 입력 정보 추출
+		
+		// 2. DB 연동 처리
+		SampleVO vo = new SampleVO();
+		SampleDAOJDBC sampleDAO = new SampleDAOJDBC();
+		List<SampleVO> sampleList = sampleDAO.selectSampleList(vo);
+		
+		//HttpSession session = request.getSession();
+		//session.setAttribute("sampleList", sampleList);
+		
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("sampleList",sampleList);	// Model에 저장하는 것은 HttpServletRequest에 저장하는 것과 같다.
+		mav.setViewName("selectSampleList.jsp");
+		
+		return mav;
+	}
+}
+```
+
+<br>
+
+selectSampleList.jsp 도 수정해준다.
+
+```jsp
+<%
+
+	// HttpServletRequest(Model)에 저장된 정보를 꺼낸다.	 
+	@SuppressWarnings("unchecked")
+	List<SampleVO> sampleList = (List<SampleVO>) request.getAttribute("sampleList");
+%>
+```
+
+<br>
+
+**결과** : \
+
+![image](https://user-images.githubusercontent.com/51431766/76157670-2b995080-614f-11ea-928d-d6b1ae303a0a.png)
+
+\
+\
+
+지금까지의 내용을 정리하면 다음과 같다.
+
+![정리](https://user-images.githubusercontent.com/51431766/76157609-48815400-614e-11ea-81ec-7da430690467.png)
+
+- 클라이언트가 /selectSampleList.do 요청을 전송하면 DsipatcherServlet이 요청을 받고
+- SimpleUrlHandlerMapping 을 통해 요청을 처리할 SelectSampleListController 을 검색한다.
+- DispatcherServlet 은 검색된 SelectSampleListController를 실행하여 요청을 처리한다.
+- SelectSampleListController 는 검색 결과인 List<SampleVO> 와 selectSampleList.jsp 이름을 ModelAndView객체에 저장하고 리턴
+- DispatcherSevlet은 selectSampleList.jsp 를 실항한다. selectSampleList.jsp 에서는 ModelAndView를 통해 HttpServletRequest
+  에 저장된 데이터로 목록 화면을 구성한다.
+
+\
+
+---
+
+\
+
+**EL과 JSTL을 이용한 화면 처리**
+
+여전히 jsp파일에 자바코드가 보인다. 이것을 EL과 JSTL로 수정해보자.
+\
+
+selectSampleList.jsp 수정
+\
+(참고로 jsp 상단에 `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>` 를 넣어줘야 한다!)
+
+```jsp
+<%@page import="java.util.List"%>
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%
+
+	// HttpServletRequest(Model)에 저장된 정보를 꺼낸다.	 
+	@SuppressWarnings("unchecked")
+	List<SampleVO> sampleList = (List<SampleVO>) request.getAttribute("sampleList");
+%>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title>SAMPLE 목록</title>
+</head>
+<body>
+	
+	<div class="container">
+	  <h2>SAMPLE 목록</h2>
+	  <p>등록한 모든 SampleVO 정보를 화면에 목록으로 보여줍니다.</p> <br><br>           
+	  <table class="table table-hover">
+	    <thead>
+	      <tr>
+	        <th>아이디</th>
+	        <th>제목</th>
+	        <th>작성자</th>
+	        <th>등록일</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	    <c:forEach var="sample" items="${selectList }">
+	    	<tr>
+		        <td><a href="selectSample.jsp?id=${sample.getId()}">${ sample.getId()}</a></td>
+		        <td>${sample.getTitle() }</td>
+		        <td>${sample.getRegUser()}</td>
+		        <td>${sample.getRegDate() }</td>
+	     	</tr>
+	    </c:forEach>
+	    </tbody>
+	  </table>
+	<br>
+	<a class="btn btn-success" href="insertSample.jsp">샘플 등록</a>	  
+	  
+	</div>													
+</body>
+</html>
+```
+
+
+
+  	
+
