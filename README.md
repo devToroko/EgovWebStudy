@@ -5331,11 +5331,105 @@ selectSample.jsp 의 아래에 있는 링크도 수정,  <br>
 <br>
 
 @ModelAttribute은 JSP 에서 사용할 데이터를 미리 세팅하는 용도로 사용한다. <br>
-@ModelAttribute은 @RequestMapping 어노테이션이 적용된 메소드보다 먼저 호출된다. <br>
-그리고
+@ModelAttribute이 설정된 메소드는 @RequestMapping 어노테이션이 적용된 메소드보다 먼저 호출된다. <br>
+그리고 @ModelAttribute이 설정된 메소드의 리턴된 객체는 자동으로 Model에 저장되기 때문에, 이 리턴값을 <br>
+JSP 에서 사용이 가능하다. SampleController에 searchConditionMap()이라는 메소드를 추가한다. <br><br>
+
+```java
+@Controller
+public class SampleController {
+	
+	// ~생략~
+	
+	// 이렇게 하면 모든 @Controller의 메서드의 model에 자동으로 "conditionMap"이라는 이름의
+	// 프로퍼티가 들어간다. 프로퍼티의 값은 return 값과 일치한다. 
+	// 참고로 현재 추가한 값들은 "검색 조건" 들이다.
+	@ModelAttribute("conditionMap")
+	public Map<String, String> searchConditionMap() {
+		Map<String, String> conditionMap = new HashMap<>();
+		conditionMap.put("제목", "TITLE");
+		conditionMap.put("내용", "CONTENT");
+		return conditionMap;
+	}
+	
+	@RequestMapping(value="/selectSampleList.do")
+	public ModelAndView selectSampleList(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+		mav.addObject("sampleList",sampleDAO.selectSampleList(vo));
+		mav.setViewName("selectSampleList");
+		return mav;
+	}
+}
+```
 
 
+<br><br>
 
+이제 model에 담긴 검색 조건들을 사용해보자. <br>
 
+**selectSampleList.jsp** <br>
+
+```jsp
+<form class="form-inline">
+	<select name="searchCondition" class="form-control">
+	<c:forEach items="${conditionMap}" var="option">
+		<option value="${option.value }">${option.key }
+	</c:forEach>
+	</select>
+	<div class="form-group">
+	   <input name="searchKeyword" type="text" class="form-control" >
+	</div>
+	<button type="submit" class="btn btn-default">검색</button>
+ </form>
+```
+<br><br>
+
+결과화면 : <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76697607-9e20a800-66dc-11ea-92aa-681f44441b51.png)
+
+<br><br>
+
+## @SessionAttribute 어노테이션 사용하기
+
+<br>
+
+주로 수정작업을 처리할 때 유용하게 사용할 수 있는 어노텡션이다. @SessionAttribute 어노테이션을 테스트하기 위해 <br>
+상세 화면에서 작성자를 수정하지 못하게 변경한다 <br><br>
+
+**selectSample.jsp 의 일부** <br>
+
+```jsp
+<label for="regUser">작성자</label>
+ <input type="text" name="regUser" class="form-control" id="regUser" value="${sample.regUser}" disabled="disabled">
+```
+
+<br><br>
+
+이 상태에서 UPDATE 버튼을 클릭하면 updateSample() 메소드가 실행된다. 그런데 문제는 사용자가 입력한 정보가 <br>
+title, content 뿐이고, 작성자(regUser) 정보는 전달되지 않기 때문에 SampleVO 에  regUser 정보가 저장되지 않는다.<br>
+이러면 sql이 수행될때, REG_USER 컬럼은 null로 수정된다. <br><br>
+
+이런 문제를 방지하기 위해서 스프링에서는 @SessionAttribute 어노테이션을 사용한다. SampleController를 일단 수정한다 <br><br>
+
+**SampleController** <br>
+
+```java
+@Controller
+@SessionAttributes("sample")
+public class SampleController {
+	// ~ 생략 ~
+	
+	@RequestMapping("/updateSample.do")
+	public String updateSample(@ModelAttribute("sample") SampleVO vo, 
+								SampleDAOJDBC sampleDAO) throws Exception {
+		System.out.println("< 수정되는 샘플 정보 >");
+		System.out.println("제목 : "+vo.getTitle());
+		System.out.println("작성자 : "+vo.getRegUser());
+		System.out.println("내용 : "+vo.getContent());
+		sampleDAO.updateSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+}
+```
 
 
