@@ -6136,7 +6136,7 @@ list.link.create=Create Sample
 ```properties
 #UI resource#
 list.mainTitle=SAMPLE 목록
-list.mainIntro=지금까지 등록한 SampleVO 목록을 보여주는 화면입니다.
+list.mainIntro=등록한 모든 SampleVO 정보를 화면에 목록으로 보여줍니다.
 
 list.search.title=제목
 list.search.condition=내용
