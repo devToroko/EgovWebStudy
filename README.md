@@ -5727,4 +5727,162 @@ db.password=book_ex3
 
 ---
 
+<br><br>
+
+## 추가 기능(검색, 예외처리, 다국어) 구현
+
+<br>
+
+### 검색 기능 구현하기
+
+<br>
+
+1\. 검색화면(selectSampleList.jsp) <br>
+
+```html
+<form action="selectSampleList.do" class="form-inline">
+	<select name="searchCondition" class="form-control">
+	<c:forEach items="${conditionMap}" var="option">
+		<option value="${option.value }">${option.key }
+	</c:forEach>
+	</select>
+	<div class="form-group">
+	   <input name="searchKeyword" type="text" class="form-control" >
+	</div>
+	<button type="submit" class="btn btn-default">검색</button>
+ </form>   
+```
+이미 앞서서 작성했던 부분인데, `action="selectSampleList.do"` 만 form의 속성값으로 추가했다.
+
+<br><br>
+
+2\. SampleVO 클래스 수정 <br>
+
+```java
+package egovframework.sample.service;
+
+import java.sql.Date;
+
+public class SampleVO {
+	private String id;
+	private String title;
+	private String regUser;
+	private String content;
+	private Date regDate;
+	
+	// 아래 두 개의 변수 추가
+	private String searchCondition;
+	private String searchKeyword;
+	
+	// ~ 중간 생략 ~
+	
+	public String getSearchCondition() {
+		return searchCondition;
+	}
+	public void setSearchCondition(String searchCondition) {
+		this.searchCondition = searchCondition;
+	}
+	public String getSearchKeyword() {
+		return searchKeyword;
+	}
+	public void setSearchKeyword(String searchKeyword) {
+		this.searchKeyword = searchKeyword;
+	}
+	
+	@Override
+	public String toString() {
+		return "SampleVO [id=" + id + ", title=" + title + ", regUser=" + regUser + ", content=" + content
+				+ ", regDate=" + regDate + "]";
+	}
+	
+}
+```
+
+<br><br>
+
+3\. 컨트롤러(SampleController) 일부 수정 <br>
+
+```java
+@RequestMapping(value="/selectSampleList.do")
+public String selectSampleList(SampleVO vo, Model model) throws Exception {
+	// Null Check
+	if(vo.getSearchCondition() == null) {vo.setSearchCondition("TITLE");}
+	if(vo.getSearchKeyword() == null) {vo.setSearchKeyword("");}
+
+	model.addAttribute("sampleList",sampleService.selectSampleList(vo));
+	return "selectSampleList";
+}
+```
+
+<br><br>
+
+4\. DAO 클래스(SampleDAOJDBC , SampleDAOSpring)의 수정
+
+```java
+@Repository("daoJDBC")
+public class SampleDAOJDBC implements SampleDAO {
+
+	// ~ 생략 ~
+	private final String SAMPLE_LIST_TITLE = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+			                          +" WHERE TITLE LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	private final String SAMPLE_LIST_CONTENT = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+						+" WHERE CONTENT LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	// ~ 중간 생략~
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("JDBC로  selectSampleList() 기능처리 목록 검색");
+		List<SampleVO> sampleList = new ArrayList<SampleVO>();
+		conn = JDBCUtil.getConnection();
+		if(vo.getSearchCondition().equals("TITLE")) {
+			pstmt = conn.prepareStatement(SAMPLE_LIST_TITLE);
+		} else if(vo.getSearchCondition().equals("CONTENT")) {
+			pstmt = conn.prepareStatement(SAMPLE_LIST_CONTENT);
+		}
+		pstmt.setString(1, vo.getSearchKeyword());
+		rs = pstmt.executeQuery();
+		while(rs.next()) {
+			SampleVO sample = new SampleVO();
+			sample.setId(rs.getString("ID"));
+			sample.setTitle(rs.getString("TITLE"));
+			sample.setRegUser(rs.getString("REG_USER"));
+			sample.setContent(rs.getString("CONTENT"));
+			sample.setRegDate(rs.getDate("REG_DATE"));
+			sampleList.add(sample);
+		}
+		JDBCUtil.close(rs,pstmt, conn);
+		return sampleList;
+	}
+	
+}
+```
+
+<br><br>
+
+```java
+@Repository("daoSpring")
+public class SampleDAOJDBC implements SampleDAO {
+
+	// ~ 생략 ~
+	private final String SAMPLE_LIST_TITLE = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+			                          +" WHERE TITLE LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	private final String SAMPLE_LIST_CONTENT = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+						+" WHERE CONTENT LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	// ~ 중간 생략~
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("Spring로  selectSampleList() 기능처리 목록 검색");
+		Object[] args = {vo.getSearchKeyword()};
+		if(vo.getSearchCondition().equals("TITLE")) {
+			return spring.query(SAMPLE_LIST_TITLE,args, new SampleRowMapper());
+		} else if(vo.getSearchCondition().equals("CONTENT")) {
+			return spring.query(SAMPLE_LIST_CONTENT,args ,new SampleRowMapper());
+		}
+		return null;
+	}	
+}
+```
 
