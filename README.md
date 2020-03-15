@@ -5451,8 +5451,8 @@ public class SampleController {
 
 어떻게 된 것일까? 차근차근 알아보자. <br><br>
 
-먼저 사용자가 상세화면 요청하면 selectSample() 메소드는 검색 결과인 SampleVO 객체를 sample이라는 이름으로 Model에 sample<br>
-이라는 이름으로 Model 에 저장한다. 이때, SampleController 상단에 선언된 @SessionAttributes("sample") 설정에 의해서, <br>
+먼저 사용자가 상세화면 요청하면 selectSample() 메소드는 SampleVO 객체를 sample이라는 이름으로 Model에 저장한다.<br>
+이때, SampleController 상단에 선언된 @SessionAttributes("sample") 설정에 의해서, <br>
 **Model 에 sample이라는 이름으로 저장된 데이터가 있다면 그 데이터를 세션(HttpSession)에도 자동으로 저장된다.**<br><br>
 
 코드를 천천히 따라가면서 더 깊이 알아보자. <br.<br>
@@ -5474,8 +5474,181 @@ public ModelAndView selectSample(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndV
 현재 이 "sample" 의 값에는 모든 값들 (id,title,regUser,content,regDate)이 저장되어 있는 상태다. <br><br>
 
 
+<br><br><br>
 
+```java
+@RequestMapping("/updateSample.do")
+public String updateSample(@ModelAttribute("sample") SampleVO vo, 
+			SampleDAOJDBC sampleDAO) throws Exception {
+	System.out.println("< 수정되는 샘플 정보 >");
+	System.out.println("제목 : "+vo.getTitle());
+	System.out.println("작성자 : "+vo.getRegUser());
+	System.out.println("내용 : "+vo.getContent());
+	sampleDAO.updateSample(vo);
+	return "redirect:/selectSampleList.do";
+}
+```
 
+<br>
+
+다음으로 내용을 수정 후 UPDATE 버튼을 누르면, 스프링 컨테이너느 우선 updateSample 메서드의 <br>
+`@ModelAttribute("sample")` 가 붙은 파라미터를 해석하여, 세션에 sample 이라는 이름으로 저장된 데이터가<br>
+있는지 확인한다. 그리고 **있다면 해당 객체를 세션에서 꺼내서 매개변수로 선언된 vo 변수에 할당한다.** <br>
+**그러고 나서야 사용자가 입력한 파라미터값을 vo 객체에 할당한다. 이때 사용가 입력한 수정 정보
+(title,content) 값만 새롭ㄱ 할당되고, 나머지(regUser)는 상세 정보 보기를 했을 때 세션에 저장된 데이터가 유지된다!** <br><br>
 
 ---
+
+<br>
+
+# 프레젠테이션 레이어와 비즈니스 레이어 통합하기
+
+<br>
+
+지금까지는 프레젠테이션 레이어만 집중적으로 살펴봤는데, <br>
+이제는 전에 만든 비즈니스 레이어(egovframework.sample.servie 패키지의 내용물) 와 프레젠테이션 레이어와 <br>
+통합하는 작업을 해보겠다. <br><br>
+
+## 비즈니스 컴포넌트 의존성 주입하기
+
+<br>
+
+현재는 우리가 JDBC를 스프링 컨테이너를 통해서 직접 생성해서 사용하는 상황이다.
+하지만 이렇게 되면 Service 단을 거치지 않고 사용하기 때문에 트랜잭션이나, Service의 로직들이 모두 무시된다.<br> 
+이런 문제를 해결하기 위해서는 일단 Service를 의존성 주입해서 JDBC를 사용해야한다. <br>
+SampleController에 @Resource를 사용해서 의존성 주입을 해보자. <br><br>
+
+```java
+package egovframework.sample.web;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.ModelAndView;
+
+import egovframework.sample.service.SampleService;
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+@Controller
+@SessionAttributes("sample")
+public class SampleController {
+	
+	@Resource(name="sampleService")
+	private SampleService sampleService;
+	
+	@ModelAttribute("conditionMap")
+	public Map<String, String> searchConditionMap() {
+		Map<String, String> conditionMap = new HashMap<>();
+		conditionMap.put("제목", "TITLE");
+		conditionMap.put("내용", "CONTENT");
+		return conditionMap;
+	}
+	
+	@RequestMapping(value="/insertSample.do", method=RequestMethod.GET)
+	public String insertSampleView() throws Exception {
+		System.out.println("등록 화면으로 이동");
+		return "insertSample";
+	}
+	
+	@RequestMapping(value="/insertSample.do", method=RequestMethod.POST)
+	public String insertSample(SampleVO vo) throws Exception {
+		System.out.println("샘플 등록 처리");
+		sampleService.insertSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/updateSample.do")
+	public String updateSample(@ModelAttribute("sample") SampleVO vo) throws Exception {
+		sampleService.updateSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/deleteSample.do")
+	public String deleteSample(SampleVO vo) throws Exception {
+		sampleService.deleteSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/selectSample.do")
+	public String selectSample(SampleVO vo, ModelAndView mav) throws Exception {
+		mav.addObject("sample", sampleService.selectSample(vo));
+		return "selectSample";
+	}
+	
+	@RequestMapping(value="/selectSampleList.do")
+	public String selectSampleList(SampleVO vo, ModelAndView mav) throws Exception {
+		mav.addObject("sampleList",sampleService.selectSampleList(vo));
+		return "selectSampleList";
+	}
+	
+}
+```
+
+파라미터에 있던 SampleJDBCDAO 를 모두 삭제하고 @Resource를 통해서 Service 객체를 의존성 주입했다. <br>
+이 상태에서 실행해보자. <br><br.
+
+![image](https://user-images.githubusercontent.com/51431766/76698370-581c1200-66e5-11ea-8e1d-4c3f4193eccf.png)
+
+<br>
+
+위와 같은 에러 메시지가 뜨는데 이는 @Resource 를 통해서 의존성 주인하려는 sampleService 빈 객체가 메모리에 없어서 <br>
+나는 에러이다. @Resource 어노테이션을 사용하려면 의존성 주입 대상이 되는 빈 객체가 반드시 메모리에 올라갸야 한다.<br><br>
+
+![이런상황이다](https://user-images.githubusercontent.com/51431766/76698391-a29d8e80-66e5-11ea-84cb-23a74b832144.png)
+
+<br><br>
+
+이를 해결하기 위해서는 Controller를 메모리에 생성하는 스프링 컨테이너보다  <br>
+**비즈니스 컴포넌트를 생성하는 스프링 컨테이너가 먼저 구동해야 한다**.
+
+<br><br>
+
+## 리스너를 등록하여 비즈니스 컴포넌트를 호출
+
+<br>
+
+스프링에 제공하는 ContextLoaderListener를 사용하면 된다. DispatcherServlet과 마찬가지로 스프링 컨테이너를 구동한다.<br>
+다만 DispatcherSerlvet이 생성되기 전에 WAS가 구동되는 시점 스프링 컨테이너를 구동한다. web.xml에 다음 내용을 추가하자. <br><br>
+
+```xml
+  <context-param>
+  	<param-name>contextConfigLocation</param-name>
+  	<param-value>
+  		classpath:egovframework/spring/context-*.xml
+  	</param-value>
+  </context-param>
+  
+  <listener>
+  	<listener-class>
+  		org.springframework.web.context.ContextLoaderListener
+  	</listener-class>
+  </listener>
+```
+
+<br><br>
+
+
+
+<br><br>
+
+현재 상황을 그림으로 정리하면 다음과 같다. <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76698492-d5945200-66e6-11ea-96e4-2e7151b79d22.png)
+
+<br><br>
+
+
+
+실행하면 ? <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76698756-f4481800-66e9-11ea-8d9e-3464d00edd9d.png)
+
 
