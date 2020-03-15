@@ -5152,7 +5152,7 @@ package egovframework.sample.web;
 public class UpdateSampleController {
 
 	@RequestMapping("/updateSample.do")
-	public String handleRequest(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+	public String updateSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
 		sampleDAO.updateSample(vo);
 		return "redirect:/selectSampleList.do";
 	}
@@ -5182,3 +5182,40 @@ public class deleteSampleController {
 ```
 
 <br><br>
+
+실행결과 : <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76696838-2306c400-66d3-11ea-96f0-fe97d30066ec.png)
+
+<br><br>
+
+
+![image](https://user-images.githubusercontent.com/51431766/76696847-39ad1b00-66d3-11ea-8f3c-46d2849a7e45.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76696871-9c061b80-66d3-11ea-8f6b-703b401057e4.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76696919-f43d1d80-66d3-11ea-99d5-c1137f0efde5.png)
+
+<br>
+
+(등록 테스트는 억지로 ID를 주면서 테스트를 해야하는데, 그렇게 하고 싶지 않아서 굳이 하지 않았다)
+
+<br><br>
+
+## 컨트롤러 통합하기
+
+여태까지 기능별로 Controller를 나눴다. 물론 이렇게 해도 되지만 조금 더 깔끔하게 정돈시키려면 <br>
+하나의 Controller에 여태까지 만든 Controller의 @RequestMappingㅇ 메서드를 하나로 모으면 된다. <br>
+다음과 같이 말이다. <br><br>
+
+```java
+
+```
+
+
+
+
