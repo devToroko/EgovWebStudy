@@ -5318,6 +5318,22 @@ selectSample.jsp 의 아래에 있는 링크도 수정,  <br>
 <br><br>
 
 
+## 기타 어노테이션
+
+<br>
+
+### @RequestParam 어노테이션 (검색해보자, 매우 간단한 내용이고 앞으로 실습에도 영향이 없어서 생략한다)
+
+<br><br>
+
+### @ModelAttribute
+
+<br>
+
+@ModelAttribute은 JSP 에서 사용할 데이터를 미리 세팅하는 용도로 사용한다. <br>
+@ModelAttribute은 @RequestMapping 어노테이션이 적용된 메소드보다 먼저 호출된다. <br>
+그리고
+
 
 
 
