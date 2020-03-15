@@ -4998,7 +4998,7 @@ public class InsertSampleController {
 
 ## 어노테이션 적용하기
 
-1\. Controller 어노테이션 <br>
+1\. @Controller 어노테이션 <br>
 
 ```java
 package egovframework.sample.web;
@@ -5011,3 +5011,174 @@ public class InsertSampleController {
 }
 ```
 
+2\. @RequestMapping <br>
+
+앞서 만들었던 HandlerMapping을 설정파일에 사용했던 것을 기억할 것이다. 이제 이것을 어노테이션 @RequestMapping <br>
+으로 대체할 것이다. 사용법은 다음과 같다. <br><br>
+
+```java
+@Controller
+public class InsertSampleController {
+
+	@RequestMapping(value="/insertSample.do")
+	public String insertSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		// 생략
+	}
+}
+```
+
+## 클라이언트의 요청처리 메서드를 더 깔끔하게 하기
+
+클라이언트의 요청에 대한 매핑과 컨트롤러가 모두 구혔되었다. 하지만 @RequestMapping 메서드가 내부가 지저분하다 <br>
+
+```java
+package egovframework.sample.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+@Controller
+public class InsertSampleController {
+
+	@RequestMapping(value="/insertSample.do")
+	public String insertSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		
+		// 잠시 후 공개~
+	}
+}
+```
+
+<br>
+
+이렇게만 하면 \<form\> 에서 보내는 "name" 속성과 vo 객체의 파라미터 이름이 같으면, 스프링은  <br>
+\<form\> 에서 보내는 "name" 속성값들을 vo 객체의 해당 파라미터에 넣어준다. <br><br>
+
+
+
+## 어노테이션 기반의 스프링 MVC 구현
+
+<br>
+
+이제까지의 내용을 응용해서 나머지 모~든 컨트롤러를 수정해보면 아래와 같다.<br><br>
+
+**InsertSampleController**
+
+```java
+package egovframework.sample.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+@Controller
+public class InsertSampleController {
+
+	@RequestMapping(value="/insertSample.do")
+	public String insertSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		System.out.println("샘플 등록 처리");
+		
+		sampleDAO.insertSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+}
+```
+
+<br><br>
+
+**SelectSampleListController**
+
+```java
+package egovframework.sample.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+@Controller
+public class SelectSampleListController {
+
+	@RequestMapping(value="/selectSampleList.do")
+	public ModelAndView selectSampleList(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+		mav.addObject("sampleList",sampleDAO.selectSampleList(vo));
+		mav.setViewName("selectSampleList");
+		return mav;
+	}
+		
+}
+```
+
+<br><br>
+
+
+**SelectSampleController**
+
+```java
+package egovframework.sample.web;
+
+// 생략
+
+@Controller
+public class SelectSampleController {
+	
+	@RequestMapping("/selectSample.do")
+	public ModelAndView selectSample(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+		
+		mav.addObject("sample", sampleDAO.selectSample(vo));
+		mav.setViewName("selectSample");
+		return mav;
+	}
+}
+```
+
+<br><br>
+
+
+**UpdateSampleController**
+
+```java
+package egovframework.sample.web;
+
+// 생략
+
+@Controller
+public class UpdateSampleController {
+
+	@RequestMapping("/updateSample.do")
+	public String handleRequest(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		sampleDAO.updateSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+}
+```
+
+<br><br>
+
+
+**deleteSampleController**
+
+```java
+package egovframework.sample.web;
+
+//생략
+
+@Controller
+public class deleteSampleController {
+
+	@RequestMapping("/deleteSample.do")
+	public String deleteSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		sampleDAO.deleteSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+}
+```
+
+<br><br>
