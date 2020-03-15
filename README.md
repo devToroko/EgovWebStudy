@@ -6089,6 +6089,8 @@ public String insertSample(SampleVO vo) throws Exception {
 }
 ```
 
+<br><br><br>
+
 ### 다국어 처리
 
 <br>
@@ -6288,5 +6290,72 @@ dispatcher-servlet.xml 에 SessionLocaleResolver 을 등록하자. <br>
 ```
 
 <br><br>
+
+
+실행결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76703867-4ef86880-6718-11ea-91bf-674b5cad265d.png)
+
+<br>
+
+우리가 사용 중인 브라우저의 Locale 이 한글이여서 현재는 한글로만 나온다.<br><br>
+
+5\. Locale 변경하기 <br>
+
+특정 언어로 화면을 보다가 해당 화면의 언어를 변경하고 싶을 때가 있다. 이를 위해서 스프링에서 제공하는 것이<br>
+LocaleChangeInterceptor 클래스다. LocaleChangeInterceptor는 HandlerInterceptor 인터페이스를 구현한 클래스로 <br>
+스프링 설정 파일에 인터셉터로 등록해야 한다. 그러기 위해서 dispatcer-servlet.xml 에 \[Namespace] 탭에서 mvc를 추가한다. <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76703979-2de44780-6719-11ea-8174-892b62085ca5.png)
+
+<br><br>
+
+그리고 xml 파일에 다음과 같이 스크립트를 추가한다. <br>
+
+```xml
+<!-- LocaleChangeInterceptor 등록 -->
+<mvc:interceptors>
+	<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+		<property name="paramName" value="lang"/>
+	</bean>
+</mvc:interceptors>
+```
+
+<br><br>
+
+`<property name="paramName" value="lang"/>` 이 중요한데, 클라이언트로부터 "lang" 이라는 파라미터로 특정 Locale이 <br>
+이 전송되면 해당 Locale로 변경하겠다는 설정이다. <br><br>
+
+여태까지의 다국어 관련 설정을 다시 한번에 보자. <br><br.
+
+```xml
+<!-- 다국어 설정 -->
+<!-- MessageSource 등록 -->
+<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	<property name="basenames">
+		<list>
+			<value>egovframework.message.message-sample</value>
+		</list>
+	</property>
+</bean>
+
+<!-- LocaleResolver 등록 -->
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"></bean>
+
+<!-- LocaleChangeInterceptor 등록 -->
+<mvc:interceptors>
+	<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+		<property name="paramName" value="lang"/>
+	</bean>
+</mvc:interceptors>
+```
+
+<br><br>
+
+이제 selectSampleList.jsp 파일에 다음과 같이 링크를 추가해서 다국어를 테스트해보자. <br>
+
+```html
+
+```
 
 
