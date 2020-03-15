@@ -5204,17 +5204,121 @@ public class deleteSampleController {
 
 (등록 테스트는 억지로 ID를 주면서 테스트를 해야하는데, 그렇게 하고 싶지 않아서 굳이 하지 않았다)
 
+---
+
 <br><br>
 
 ## 컨트롤러 통합하기
 
 여태까지 기능별로 Controller를 나눴다. 물론 이렇게 해도 되지만 조금 더 깔끔하게 정돈시키려면 <br>
-하나의 Controller에 여태까지 만든 Controller의 @RequestMappingㅇ 메서드를 하나로 모으면 된다. <br>
+하나의 Controller에 여태까지 만든 Controller의 @RequestMapping 메서드를 하나로 모으면 된다. <br>
 다음과 같이 말이다. <br><br>
 
 ```java
+package egovframework.sample.web;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import egovframework.sample.service.SampleVO;
+import egovframework.sample.service.impl.SampleDAOJDBC;
+
+@Controller
+public class SampleController {
+	
+	@RequestMapping("/insertSample.do")
+	public String insertSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		sampleDAO.insertSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/updateSample.do")
+	public String updateSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		sampleDAO.updateSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/deleteSample.do")
+	public String deleteSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		sampleDAO.deleteSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	@RequestMapping("/selectSample.do")
+	public ModelAndView selectSample(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+		mav.addObject("sample", sampleDAO.selectSample(vo));
+		mav.setViewName("selectSample");
+		return mav;
+	}
+	
+	@RequestMapping(value="/selectSampleList.do")
+	public ModelAndView selectSampleList(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+		mav.addObject("sampleList",sampleDAO.selectSampleList(vo));
+		mav.setViewName("selectSampleList");
+		return mav;
+	}
+	
+}
 ```
+
+<br><br>
+
+작성이 완료된 후에는 SampleController를 제외한 모든 Controller를 삭제한다.<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76697020-23a05a00-66d5-11ea-8da6-78ba9ce1d7e8.png)
+
+
+<br><br>
+
+### 요청 방식(GET,POST)에 따른 처리
+
+<br>
+
+그냥 @RequestMapping에 method 값을 주면 된다. <br><br>
+
+```java
+
+@Controller
+public class SampleController {
+	
+	@RequestMapping(value="/insertSample.do", method=RequestMethod.GET)
+	public String insertSampleView() throws Exception {
+		System.out.println("등록 화면으로 이동");
+		return "insertSample";
+	}
+
+	@RequestMapping(value="/insertSample.do", method=RequestMethod.POST)
+	public String insertSample(SampleVO vo, SampleDAOJDBC sampleDAO) throws Exception {
+		System.out.println("샘플 등록 처리");
+		sampleDAO.insertSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	// 이하 생략
+}
+```
+
+<br><br>
+
+이와 관련된 jsp 파일도 약간의 수정을 해주자. <br>
+
+selectSampleList.jsp 파일 맨 아래 \[샘플 등록] 링크를 수정한다. <br>
+`<a class="btn btn-success" href="insertSample.jsp">샘플 등록</a>` 
+== 수정 ==> `<a class="btn btn-success" href="insertSample.do">샘플 등록</a>` <br>
+
+
+selectSample.jsp 의 아래에 있는 링크도 수정,  <br>
+`<a href="insertSample.do" class="btn btn-success" role="button">INSERT</a>` <br>
+
+이러고 나서 insertSample.jsp 파일의 위치를 WEB-INF/samle/ 하위로 이동시킨다. <br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76697142-821a0800-66d6-11ea-90ad-630712e33cd4.png) 
+
+<br><br>
+
+
+
 
 
 
