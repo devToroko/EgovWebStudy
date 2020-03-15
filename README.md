@@ -5415,6 +5415,8 @@ title, content 뿐이고, 작성자(regUser) 정보는 전달되지 않기 때�
 
 ```java
 @Controller
+//Controller의 어느 메서드에서든 model에서 sample이라는 이름의 속성을 추가하면, 
+//그 순간 세션에도 똑같은 속성과, 속성값을 저장한다.
 @SessionAttributes("sample")
 public class SampleController {
 	// ~ 생략 ~
@@ -5432,4 +5434,48 @@ public class SampleController {
 }
 ```
 
+<br><br>
+
+수정실행 결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76697782-e2ad4300-66de-11ea-95d9-b240a99a919f.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76697826-5ea78b00-66df-11ea-8a49-37f6ee712e43.png)
+
+(로그에 작성자가 잘 찍혀있는 것을 확인 할 수 있다)
+
+<br><br>
+
+
+어떻게 된 것일까? 차근차근 알아보자. <br><br>
+
+먼저 사용자가 상세화면 요청하면 selectSample() 메소드는 검색 결과인 SampleVO 객체를 sample이라는 이름으로 Model에 sample<br>
+이라는 이름으로 Model 에 저장한다. 이때, SampleController 상단에 선언된 @SessionAttributes("sample") 설정에 의해서, <br>
+**Model 에 sample이라는 이름으로 저장된 데이터가 있다면 그 데이터를 세션(HttpSession)에도 자동으로 저장된다.**<br><br>
+
+코드를 천천히 따라가면서 더 깊이 알아보자. <br.<br>
+
+```java
+@RequestMapping("/selectSample.do")
+public ModelAndView selectSample(SampleVO vo, SampleDAOJDBC sampleDAO, ModelAndView mav) throws Exception {
+
+	mav.addObject("sample", sampleDAO.selectSample(vo));
+	mav.setViewName("selectSample");
+	return mav;
+}
+```
+
+<br>
+
+일단 수정을 하기 위해서는 상세화면에 가게 된다. 이때 `mav.addObject("sample", sampleDAO.selectSample(vo));` 에 <br>
+의해서 Model 뿐만 아니라 HttpSession에도 마찬가지로 "sample"이라는 이름으로 데이터가 저장된다. <br>
+현재 이 "sample" 의 값에는 모든 값들 (id,title,regUser,content,regDate)이 저장되어 있는 상태다. <br><br>
+
+
+
+
+
+---
 
