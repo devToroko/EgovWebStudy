@@ -5527,15 +5527,14 @@ import java.util.Map;
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.ModelAndView;
 
 import egovframework.sample.service.SampleService;
 import egovframework.sample.service.SampleVO;
-import egovframework.sample.service.impl.SampleDAOJDBC;
 
 @Controller
 @SessionAttributes("sample")
@@ -5578,22 +5577,26 @@ public class SampleController {
 	}
 	
 	@RequestMapping("/selectSample.do")
-	public String selectSample(SampleVO vo, ModelAndView mav) throws Exception {
-		mav.addObject("sample", sampleService.selectSample(vo));
+	public String selectSample(SampleVO vo, Model model) throws Exception {
+		model.addAttribute("sample", sampleService.selectSample(vo));
 		return "selectSample";
 	}
 	
 	@RequestMapping(value="/selectSampleList.do")
-	public String selectSampleList(SampleVO vo, ModelAndView mav) throws Exception {
-		mav.addObject("sampleList",sampleService.selectSampleList(vo));
+	public String selectSampleList(SampleVO vo, Model model) throws Exception {
+		model.addAttribute("sampleList",sampleService.selectSampleList(vo));
 		return "selectSampleList";
 	}
 	
 }
 ```
+(참고로 예전 코드와 달리 return  값을 String으로 통일했다, 그리고 그 과정에서 ModelAndView 대신 <br>
+Model 을 사용했음으로 유의하기 바란다. 추가적으로 return이 String이면 ModelAndView가 무효화된다) 
+
+<br><br>
 
 파라미터에 있던 SampleJDBCDAO 를 모두 삭제하고 @Resource를 통해서 Service 객체를 의존성 주입했다. <br>
-이 상태에서 실행해보자. <br><br.
+이 상태에서 실행해보자. <br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/76698370-581c1200-66e5-11ea-8e1d-4c3f4193eccf.png)
 
@@ -5635,20 +5638,93 @@ public class SampleController {
 
 <br><br>
 
+서버를 실행하면 ? <br>
 
+![image](https://user-images.githubusercontent.com/51431766/76698756-f4481800-66e9-11ea-8d9e-3464d00edd9d.png)
 
 <br><br>
 
-현재 상황을 그림으로 정리하면 다음과 같다. <br>
+자세히 보면 Root WebApplication 와 WebApplication 이라는 두 개의 스프링 컨테이너가 초기화 되는 것을 볼 수 있다.<br>
+그리고 이 두개의 컨테이너는 우리가 앞서 web.xml에서 설정했던 설정파일 경로의 xml을 사용해서 만들어진 스프링 컨테이너다.<br>
+아래 그림을 보면서 이 두개의 스프링 컨테이너 관계를 정리해보자. <br><br>
 
 ![image](https://user-images.githubusercontent.com/51431766/76698492-d5945200-66e6-11ea-96e4-2e7151b79d22.png)
 
 <br><br>
 
 
+1\. 톰캣 서버를 구동하면 web.xml 파일을 로딩하여 서블릿 컨테이너가 구동된다.  <br><br>
+2\. 서블릿 컨테이너는 web.xml 파일에 등록된 ContextLoaderListener 객체를 생성하고, 생성된 ContextLoaderListener는 <br>
+   src/main/resources 소스 폴더에 있는 "context-\*.xml" 파일을 사용해서 스프링 컨테이너를 구동한다.  <br>
+   이 스프링 컨테이너를 우리는 **"Root 컨테이너"**라고 한다.
 
-실행하면 ? <br>
+3\. 스프링 컨테이너는 설정파일에 따라 ServiceImpl 이나 DAO 와 같은 객체들을 메모리에 생성한다. <br>
+4\. 사용자가 selectSampleList.do 요청을 서버에 전달하면 서블릿 컨테이너는 DispatcherServlet 객체를 생성하고 <br>
+5\. DispatcherServlet 객체는 web.xml에서 초기화 파라미터로 줬던 /WEB-INF/config 폴더에 있는 <br>
+    dispatcher-servlet.xml 파일을 로딩하여 두 번째 스프링 컨테이너를 생성한다. 이 컨테이너를 **"자식 컨테이너"** <br>
+    라고 부른다. <br>
+6\. 자식 컨테이너는 Controller 객체를 메모리에 생성하고, **필요하면 Root 컨테이너에 있는 빈 객체를 참조한다**. <br><br>
 
-![image](https://user-images.githubusercontent.com/51431766/76698756-f4481800-66e9-11ea-8d9e-3464d00edd9d.png)
+![image](https://user-images.githubusercontent.com/51431766/76701305-637e3600-6703-11ea-9ebc-8e9cb9d6fa63.png)
+
+<br><br>
+
+
+---
+Tip. 만약 properties 파일을 사용해서 bean 파일에 적용하고 싶다면? <br><br>
+
+
+1\. 파일 위치 잡고 <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76701321-8f99b700-6703-11ea-8e71-eed00d3fc908.png)
+
+<br><br>
+
+2\. 내용은 아래와 같이 작성 <br>
+
+```properties
+# DB Properties
+db.driver=oracle.jdbc.driver.OracleDriver
+db.url=jdbc:oracle:thin:@127.0.0.1:1521:xe
+db.username=book_ex3 
+db.password=book_ex3
+```
+
+<br><br>
+
+3\. 빈 설정 파일에 다음과 같이 작성 <br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:config/config.properties</value>
+			</list>
+		</property>
+		<property name="fileEncoding" value="UTF-8"></property>	
+	</bean>
+
+	<!-- Oracle DataSource -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${db.driver}"/>
+		<property name="url" value="${db.url}"/>
+		<property name="username" value="${db.username}"/>
+		<property name="password" value="${db.password}"/>
+	</bean>
+</beans>
+```
+
+<br>
+
+끝! <br>
+
+---
 
 
