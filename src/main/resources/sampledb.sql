@@ -20,4 +20,4 @@ CREATE TABLE IDS(
 INSERT INTO IDS VALUES('SAMPLE',2);
 
 select * from SAMPLE;
-
+select * from  IDS;

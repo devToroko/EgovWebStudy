@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- HandlerMapping 등록 -->
+	<!-- <bean id="handlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<prop key="/selectSampleList.do">selectSampleList</prop>
+				<prop key="/selectSample.do">selectSample</prop>
+				<prop key="/insertSample.do">insertSample</prop>
+				<prop key="/updateSample.do">updateSample</prop>
+				<prop key="/deleteSample.do">deleteSample</prop>
+			</props>
+		</property>
+	</bean> -->
+	
+	<!-- Controller 등록 -->
+	<!-- <bean id="selectSampleList" class="egovframework.sample.web.SelectSampleListController" />
+	<bean id="selectSample" class="egovframework.sample.web.SelectSampleController" />
+	<bean id="insertSample" class="egovframework.sample.web.InsertSampleController" />
+	<bean id="updateSample" class="egovframework.sample.web.UpdateSampleController" />
+	<bean id="deleteSample" class="egovframework.sample.web.deleteSampleController" /> -->
+	
+	<context:component-scan base-package="egovframework">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	
+	<!-- ViewResolver 등록 -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/sample/"/>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<!-- 예외 처리 설정 -->
+	<bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="java.lang.IllegalArgumentException">
+					common/illegalArgumentError
+				</prop>
+			</props>
+		</property>
+		<property name="defaultErrorView" value="common/error"></property>
+	</bean>
+	
+	<!-- 다국어 설정 -->
+	<!-- MessageSource 등록 -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>egovframework.message.message-sample</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- LocaleResolver 등록 -->
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"></bean>
+	
+	<!-- LocaleChangeInterceptor 등록 -->
+	<mvc:interceptors>
+		<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<property name="paramName" value="lang"/>
+		</bean>
+	</mvc:interceptors>
+	
+</beans>

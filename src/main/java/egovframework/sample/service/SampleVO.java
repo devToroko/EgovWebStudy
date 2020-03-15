@@ -2,12 +2,15 @@ package egovframework.sample.service;
 
 import java.sql.Date;
 
+
 public class SampleVO {
 	private String id;
 	private String title;
 	private String regUser;
 	private String content;
 	private Date regDate;
+	private String searchCondition;
+	private String searchKeyword;
 	
 	public String getId() {
 		return id;
@@ -40,11 +43,23 @@ public class SampleVO {
 		this.regDate = regDate;
 	}
 	
+	public String getSearchCondition() {
+		return searchCondition;
+	}
+	public void setSearchCondition(String searchCondition) {
+		this.searchCondition = searchCondition;
+	}
+	public String getSearchKeyword() {
+		return searchKeyword;
+	}
+	public void setSearchKeyword(String searchKeyword) {
+		this.searchKeyword = searchKeyword;
+	}
+	
 	@Override
 	public String toString() {
 		return "SampleVO [id=" + id + ", title=" + title + ", regUser=" + regUser + ", content=" + content
 				+ ", regDate=" + regDate + "]";
 	}
-	
 	
 }

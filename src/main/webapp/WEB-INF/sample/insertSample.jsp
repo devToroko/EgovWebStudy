@@ -16,7 +16,8 @@
 	  <h2>SAMPLE 등록</h2>
 	  <p>SampleVO를 등록하는 화면입니다.</p><br>
 	  
-	  <form action="insertSample_proc.jsp" method="post">
+	  <%-- .jsp --> .do 로 수정 --%>
+	  <form action="insertSample.do" method="post">
 		<div class="form-group">
 			<label for="title">제목</label>
 			<input type="text" name="title" class="form-control" id="title" placeholder="제목을  입력하세요" required="required">
@@ -31,7 +32,9 @@
 	    </div>
 	    <br><br>
 	    <button type="submit" class="btn btn-success">INSERT</button>
-	    <a href="selectSampleList.jsp" class="btn btn-info" role="button">LIST</a>
+	    
+	   	<%-- .jsp --> .do 로 수정 --%>
+	    <a href="selectSampleList.do" class="btn btn-info" role="button">LIST</a>
 	  </form>
 	</div>
 		

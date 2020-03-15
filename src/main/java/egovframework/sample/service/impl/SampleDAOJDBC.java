@@ -27,8 +27,15 @@ public class SampleDAOJDBC implements SampleDAO {
 	private final String SAMPLE_UPDATE = "UPDATE SAMPLE SET TITLE=?, REG_USER=?, CONTENT=? WHERE ID=?";
 	private final String SAMPLE_DELETE = "DELETE FROM SAMPLE WHERE ID = ?";
 	private final String SAMPLE_GET = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE WHERE ID = ?";
-	private final String SAMPLE_LIST = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE ORDER BY REG_DATE DESC";
-		
+//	private final String SAMPLE_LIST = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE ORDER BY REG_DATE DESC";
+	
+	private final String SAMPLE_LIST_TITLE = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+											+" WHERE TITLE LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	private final String SAMPLE_LIST_CONTENT = "SELECT ID, TITLE, REG_USER, CONTENT, REG_DATE FROM SAMPLE"
+							+" WHERE CONTENT LIKE '%'||?||'%' ORDER BY REG_DATE DESC";
+	
+	
 	public SampleDAOJDBC() {
 		System.out.println("===> SampleDAOJDBC 생성");
 	}
@@ -90,7 +97,12 @@ public class SampleDAOJDBC implements SampleDAO {
 		System.out.println("JDBC로  selectSampleList() 기능처리 목록 검색");
 		List<SampleVO> sampleList = new ArrayList<SampleVO>();
 		conn = JDBCUtil.getConnection();
-		pstmt = conn.prepareStatement(SAMPLE_LIST);
+		if(vo.getSearchCondition().equals("TITLE")) {
+			pstmt = conn.prepareStatement(SAMPLE_LIST_TITLE);
+		} else if(vo.getSearchCondition().equals("CONTENT")) {
+			pstmt = conn.prepareStatement(SAMPLE_LIST_CONTENT);
+		}
+		pstmt.setString(1, vo.getSearchKeyword());
 		rs = pstmt.executeQuery();
 		while(rs.next()) {
 			SampleVO sample = new SampleVO();
