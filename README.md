@@ -5886,3 +5886,220 @@ public class SampleDAOJDBC implements SampleDAO {
 }
 ```
 
+서버를 실행시켜 접속해보자. 목록들이 잘 나올 것이다. 안 나오면, 원인 분석하고 해결해보자.
+
+<br><br>
+
+### 예외 처리
+
+<br>
+
+클라이언트 요청에 따라 웹 프로그램이 실행되다 보면 예기치 모한 예외가 발생할 수 있다. <br>
+이때 사용자 브라우저에 발생된 예외에 따른 적절한 화면과 메시직 출려되는 것이 좋다.<br>
+스프링은 ExceptionResolver 클래스를 이용하여 발생된 예외를 적절한 화면으로 처리할 수 있도록 한다.
+
+<br><br>
+
+1\. 예외 발생 <br>
+클라이언트가 저장할 내용을 입력하지 않으면 IllegalAgumentException이 발생하도록 SampleController 를 수정한다.<br><br>
+
+```java
+
+@Controller
+@SessionAttributes("sample")
+public class SampleController {
+
+	// ~ 중간 생략 ~ //
+
+	@RequestMapping(value="/insertSample.do", method=RequestMethod.POST)
+	public String insertSample(SampleVO vo) throws Exception {
+		System.out.println("샘플 등록 처리");
+		
+		if(vo.getContent() == null || vo.getContent().length() == 0) {
+			throw new IllegalArgumentException("내용이 입력되지 않았습니다");
+		}
+		
+		sampleService.insertSample(vo);
+		return "redirect:/selectSampleList.do";
+	}
+	
+	// ~ 중간 생략 ~ //
+	
+}
+```
+
+<br><br>
+
+2\. 예외 전용 화면(JSP) <br>
+
+만약 위의 에러가 터져서 사용자의 브라우저에 나오면, 사용자는 무슨 의미인지 모르고 어리둥절할 것이다. <br>
+이런식으로 냅둬어서는 안된다. 사용자들이 이해할 수 있도록 화면을 구성하자. <br><br>
+
+일단 파일 위치와 이름은 다음과 같다.<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76702492-a34a1b00-670d-11ea-923e-14e358c30126.png)
+
+<br><br>
+
+**error.jsp** <br>
+
+```html
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Oops!</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<style type="text/css">
+body { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABZ0RVh0Q3JlYXRpb24gVGltZQAxMC8yOS8xMiKqq3kAAAAcdEVYdFNvZnR3YXJlAEFkb2JlIEZpcmV3b3JrcyBDUzVxteM2AAABHklEQVRIib2Vyw6EIAxFW5idr///Qx9sfG3pLEyJ3tAwi5EmBqRo7vHawiEEERHS6x7MTMxMVv6+z3tPMUYSkfTM/R0fEaG2bbMv+Gc4nZzn+dN4HAcREa3r+hi3bcuu68jLskhVIlW073tWaYlQ9+F9IpqmSfq+fwskhdO/AwmUTJXrOuaRQNeRkOd5lq7rXmS5InmERKoER/QMvUAPlZDHcZRhGN4CSeGY+aHMqgcks5RrHv/eeh455x5KrMq2yHQdibDO6ncG/KZWL7M8xDyS1/MIO0NJqdULLS81X6/X6aR0nqBSJcPeZnlZrzN477NKURn2Nus8sjzmEII0TfMiyxUuxphVWjpJkbx0btUnshRihVv70Bv8ItXq6Asoi/ZiCbU6YgAAAABJRU5ErkJggg==);}
+.error-template {padding: 40px 15px;text-align: center;}
+.error-actions {margin-top:15px;margin-bottom:15px;}
+.error-actions .btn { margin-right:10px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="error-template">
+                <h1>Oops!</h1>
+                <div class="error-details">
+                    Message: ${exception.message }
+                </div>
+                <div class="error-actions">
+                    <a href="selectSampleList.do" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-home"></span>Take Me Home </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+```
+
+<br><br>
+
+**illegalArgumentError.jsp**
+
+```html
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Oops!</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<style type="text/css">
+body { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABZ0RVh0Q3JlYXRpb24gVGltZQAxMC8yOS8xMiKqq3kAAAAcdEVYdFNvZnR3YXJlAEFkb2JlIEZpcmV3b3JrcyBDUzVxteM2AAABHklEQVRIib2Vyw6EIAxFW5idr///Qx9sfG3pLEyJ3tAwi5EmBqRo7vHawiEEERHS6x7MTMxMVv6+z3tPMUYSkfTM/R0fEaG2bbMv+Gc4nZzn+dN4HAcREa3r+hi3bcuu68jLskhVIlW073tWaYlQ9+F9IpqmSfq+fwskhdO/AwmUTJXrOuaRQNeRkOd5lq7rXmS5InmERKoER/QMvUAPlZDHcZRhGN4CSeGY+aHMqgcks5RrHv/eeh455x5KrMq2yHQdibDO6ncG/KZWL7M8xDyS1/MIO0NJqdULLS81X6/X6aR0nqBSJcPeZnlZrzN477NKURn2Nus8sjzmEII0TfMiyxUuxphVWjpJkbx0btUnshRihVv70Bv8ItXq6Asoi/ZiCbU6YgAAAABJRU5ErkJggg==);}
+.error-template {padding: 40px 15px;text-align: center;}
+.error-actions {margin-top:15px;margin-bottom:15px;}
+.error-actions .btn { margin-right:10px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="error-template">
+                <h1> Oops!</h1>
+                <div class="error-details">
+                    Message: ${exception.message }
+                </div>
+                <div class="error-actions">
+                    <a href="selectSampleList.do" class="btn btn-primary btn-lg"><span class="glyphicon glyphicon-home"></span>Take Me Home </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+```
+
+<br><br>
+
+3\. 스프링 설정 추가 (dispatcher-servlet.xml)<br>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	
+	<context:component-scan base-package="egovframework">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	
+	<!-- ViewResolver 등록 -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/sample/"/>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<!-- 예외 처리 설정 -->
+	<bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="java.lang.IllegalArgumentException">
+					common/illegalArgumentError
+				</prop>
+			</props>
+		</property>
+		<property name="defaultErrorView" value="common/error"></property>
+	</bean>
+</beans>
+```
+
+<br>
+
+IllegalArgumentException 이 발생하면 illegalArgumentError.jsp 화면이 사용자 브라우저에 전송되고 <br>
+Exception 이 발생하면 defaultErrorView 로 설정한 error.jsp 화면이 전송되도록 SimpleMappingExceptionResolver <br>
+클래스를 설정했다. <span style="color:red">에러 화면에 해당하는 jsp 파일의 이름을 등록할 때는 ViewResolver를 고려하여야 한다</span>.
+
+<br><br>
+
+실행결과: <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76702844-88c57100-6710-11ea-90ea-e253ea8bc25c.png)
+
+<br><br>
+
+잘되는 것을 확인했으니 insertSample() 메소드에 추가한 예외 발생 코드는 주석 혹은 삭제한다.<br>
+
+```java
+@RequestMapping(value="/insertSample.do", method=RequestMethod.POST)
+public String insertSample(SampleVO vo) throws Exception {
+	System.out.println("샘플 등록 처리");
+	sampleService.insertSample(vo);
+	return "redirect:/selectSampleList.do";
+}
+```
+
+### 다국어 처리
+
+<br>
+
+다국어란 국제화라고도 하며 하나의 JSP 페이지를 다양한 언어로 서비스하는 것을 의미한다. <br>
+프레임워크가 다국어를 지원하기 전에는 언어별로 JSP 파일들을 만들어야 했기 때문에 매우 불편했지만, <br>
+스프링의 다국어 기능을 사용하면 그럴 필요가 없다. <br><br>
+
+1\. 메시지 파일 생성 <br>
+
+
+
+
+
