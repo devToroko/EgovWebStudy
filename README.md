@@ -5740,7 +5740,7 @@ db.password=book_ex3
 1\. 검색화면(selectSampleList.jsp) <br>
 
 ```html
-<form action="selectSampleList.do" class="form-inline">
+<form action="selectSampleList.do" method="post" class="form-inline">
 	<select name="searchCondition" class="form-control">
 	<c:forEach items="${conditionMap}" var="option">
 		<option value="${option.value }">${option.key }
@@ -5752,7 +5752,7 @@ db.password=book_ex3
 	<button type="submit" class="btn btn-default">검색</button>
  </form>   
 ```
-이미 앞서서 작성했던 부분인데, `action="selectSampleList.do"` 만 form의 속성값으로 추가했다.
+이미 앞서서 작성했던 부분인데, `action="selectSampleList.do" method="post"` 를 form의 속성,속성값으로 추가했다.
 
 <br><br>
 
@@ -6179,7 +6179,7 @@ list.link.create=샘플 등록
 
 웹 브라우저가 서버에 HTTP 요청을 전송하면 브라우저의 Locale 정보가 HTTP 요청 메시지 헤더에 자동으로 <br>
 설정되어 전송된다. 이때, 스프링은 LocaleResolver를 통해서 클라이언트의 Locale 정보를 추출하고, <br>
-이 Locale 정보에 해당하는 언어의 메시지를 적용한다. <br><br.
+이 Locale 정보에 해당하는 언어의 메시지를 적용한다. <br><br>
 
 스프링은 다음과 같이 4개의 LocaleResolver를 지원한다. 만약 스프링 설정파일에 LocaleResolver가 등록<br>
 되지 않았다면 기본으로 AcceptHeaderLocaleResolver가 적용된다. <br><br>
@@ -6191,11 +6191,102 @@ list.link.create=샘플 등록
 | SessionLocaleResolver      | HttpSession에 저장된 Locale 정보를 추출하여 메시지를 적용한다.                                 |
 | FixedLocaleResolver        | 웹 요청과 무관하게 특정 Locale로 고정한다.                                                     |
 
-<br><br.
+<br>
 
+스프링에서는 다양한 LocaleResolver를 지원하지만 세션으로부터 Locale 정보를 추출하고 유지하는 SessionLocaleResolver<br>
+를 가장 많이 이용한다.<br><br>
 
+dispatcher-servlet.xml 에 SessionLocaleResolver 을 등록하자. <br>
 
+```xml
+<!-- LocaleResolver 등록 -->
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"></bean>
+```
+(**주의!!! LocaleResolver 아이디를 localeResolver 로 등록해야 한다!!**)
 
+<br><br>
 
+4\. JSP 파일 작성 <br>
+
+여태 작성한 것을 쓰기 위해선는 스프링에서 제공하는 태그라이브러리를 이용해야 한다. <br>
+지금부터 selectSampleList.jsp를 수정해보자. <br><br>
+
+(`<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>` 추가하는 것을 잊지말자)
+
+<br>
+
+전체 jsp 코드를 보면 아래와 같다. <br><br>
+
+```html
+<%@page import="java.util.List"%>
+<%@page import="egovframework.sample.service.impl.SampleDAOJDBC"%>
+<%@page import="egovframework.sample.service.SampleVO"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<title><spring:message code="list.mainTitle"/></title>
+</head>
+<body>
+	<div class="container">
+	  <h2><spring:message code="list.mainTitle"/></h2>
+	  <p><spring:message code="list.mainIntro"/></p><br>
+	  <div class="row">
+	  	  <div class="col-6" style="text-align:right">
+			  <form action="selectSampleList.do" method="post" class="form-inline">
+				<select name="searchCondition" class="form-control">
+					<option value="TITLE"><spring:message code="list.search.title"/></option>
+					<option value="CONTENT"><spring:message code="list.search.condition"/></option>
+				</select>
+				<div class="form-group">
+				   <input name="searchKeyword" type="text" class="form-control" >
+				</div>
+				<button type="submit" class="btn btn-default"><spring:message code="list.search.button"/></button>
+			  </form>       
+		  </div>
+      </div>
+      <br>
+      
+	  <table class="table table-hover">
+	    <thead>
+	      <tr>
+	        <th><spring:message code="list.list.table.id"/></th>
+	        <th><spring:message code="list.list.table.title"/></th>
+	        <th><spring:message code="list.list.table.regUser"/></th>
+	        <th><spring:message code="list.list.table.regDate"/></th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	    <c:forEach var="sample" items="${sampleList}">
+	    	<tr>
+		        <td><a href="selectSample.do?id=${sample.id}">${sample.id}</a></td>
+		        <td>${sample.title }</td>
+		        <td>${sample.regUser}</td>
+		        <td>${sample.regDate}</td>
+	     	</tr>
+	    </c:forEach>
+	    </tbody>
+	  </table>
+	<br>
+	
+	<a class="btn btn-success" href="insertSample.do"><spring:message code="list.link.create"/></a>	  
+	  
+	</div>							
+						
+</body>
+</html>
+```
+
+<br><br>
 
 
