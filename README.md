@@ -6099,6 +6099,102 @@ public String insertSample(SampleVO vo) throws Exception {
 
 1\. 메시지 파일 생성 <br>
 
+![image](https://user-images.githubusercontent.com/51431766/76702994-74ce3f00-6711-11ea-8722-a8eacb90bb44.png)
+
+(참고로 파일 생성시에는 \[New] -> \[Untitled Text File] 로 생성했다. 확장자는 꼭 properties 로 한다)
+
+<br><br>
+
+**message-sample_en.properties** <br>
+
+```properties
+#UI resource#
+list.mainTitle=LIST SAMPLE
+
+list.search.title=TITLE
+list.search.condition=CONTENT
+list.search.button=Search
+
+list.list.table.id=SAMPLE ID
+list.list.table.title=TITLE
+list.list.table.regUser=REG-USER
+list.list.table.regDate=REG-DATE
+
+list.link.locale.en=ENGLISH
+list.link.locale.ko=KOREAN
+
+list.link.create=Create Sample
+```
+
+<br><br>
+
+**message-sample_ko.properties** <br>
+
+```properties
+#UI resource#
+list.mainTitle=SAMPLE 목록
+
+list.search.title=제목
+list.search.condition=내용
+list.search.button=검색
+
+list.list.table.id=아이디
+list.list.table.title=제목
+list.list.table.regUser=작성자
+list.list.table.regDate=작성일
+
+list.link.locale.en=영어
+list.link.locale.ko=한글
+
+list.link.create=샘플 등록
+```
+
+<br><br>
+
+2\. dispatcher-servlet.xml에 MessageSource 등록 <br>
+
+```xml
+<!-- 다국어 설정 -->
+<!-- MessageSource 등록 -->
+<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	<property name="basenames">
+		<list>
+			<value>egovframework.message.message-sample</value>
+		</list>
+	</property>
+</bean>
+```
+
+<br>
+
+위에서 보면 메시지 파일들이 정확하게 등록되지 않아있는 것에 주목하길 바란다. <br>
+생략된 부분이 확장자(.properties) 와 국가를 의미하는 것(\_en,\_ko) 도 생략되어 있다. <br>
+이렇게 생략을 통해서 한번에 2개의 파일을 지정할 수 있기 때문에 편하다. 후에 더 추가되어도 <br>
+이름 규칙만 잘 지키면 현재 스크립트를 건드리지 않고도 사용이 가능하다. <br><br>
+
+다만 어떤 메시지 파일이 적용되는지는 기본 언어 설정과 Locale의 변화에 따라 해당 언어의 메시지가 <br>
+자동으로 적용되도록 한다.<br><br>
+
+3\. LocaleResolver 등록 <br>
+
+웹 브라우저가 서버에 HTTP 요청을 전송하면 브라우저의 Locale 정보가 HTTP 요청 메시지 헤더에 자동으로 <br>
+설정되어 전송된다. 이때, 스프링은 LocaleResolver를 통해서 클라이언트의 Locale 정보를 추출하고, <br>
+이 Locale 정보에 해당하는 언어의 메시지를 적용한다. <br><br.
+
+스프링은 다음과 같이 4개의 LocaleResolver를 지원한다. 만약 스프링 설정파일에 LocaleResolver가 등록<br>
+되지 않았다면 기본으로 AcceptHeaderLocaleResolver가 적용된다. <br><br>
+
+| LocaleResovler             | 설명                                                                                           |
+|----------------------------|------------------------------------------------------------------------------------------------|
+| AcceptHeaderLocaleResolver | 브라우저에서 전송된 HTTP 요청 헤더에서 Accept-Language에 설정된<br>Locale로 메시지를 적용한다. |
+| CookieLocaleResolver       | Cookie 에 저장된 Locale 정보를 추출하여 메시지를 적용한다.                                     |
+| SessionLocaleResolver      | HttpSession에 저장된 Locale 정보를 추출하여 메시지를 적용한다.                                 |
+| FixedLocaleResolver        | 웹 요청과 무관하게 특정 Locale로 고정한다.                                                     |
+
+<br><br.
+
+
+
 
 
 
