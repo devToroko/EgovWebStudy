@@ -6112,6 +6112,7 @@ public String insertSample(SampleVO vo) throws Exception {
 ```properties
 #UI resource#
 list.mainTitle=LIST SAMPLE
+list.mainIntro=Show All List that you have insert before.
 
 list.search.title=TITLE
 list.search.condition=CONTENT
@@ -6135,6 +6136,7 @@ list.link.create=Create Sample
 ```properties
 #UI resource#
 list.mainTitle=SAMPLE 목록
+list.mainIntro=지금까지 등록한 SampleVO 목록을 보여주는 화면입니다.
 
 list.search.title=제목
 list.search.condition=내용
