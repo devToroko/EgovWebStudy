@@ -6421,3 +6421,270 @@ LocaleChangeInterceptor 클래스다. LocaleChangeInterceptor는 HandlerIntercep
 
 # 표준프레임워크 실행환경 - 데이터처리 레이어
 
+<br>
+
+## IBATIS 프레임워크 적용 (생략)
+
+<br>
+
+---
+
+<br><br>
+
+## MyBatis 프레임워크 적용
+
+
+### 메인 환경설정 파일 만들기
+
+<br>
+
+**1\. 폴더 생성** <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76770262-f9d45980-67e0-11ea-8772-cbf614073f89.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76770336-212b2680-67e1-11ea-9e15-db6b1a7408d5.png)
+
+<br><br>
+
+2\. 스크립트 작성 <br>
+
+```XML
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	 					 "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<typeAliases>
+		<typeAlias alias="sample" type="egovframework.sample.service.SampleVO"/>
+	</typeAliases>
+</configuration>	 					 
+```
+
+<br>
+
+\<typeAliases\> 는 특정 클래스에 대해서 별칭(Alias) 를 줄 수 있다. 그리고 이렇게 주어진 별칭들은 SQLMapper <br>
+
+파일에서 사용할 수 있다. <br><br>
+
+
+### SQL Mapper 파일 만들기
+
+<br>
+
+1\. **폴더 생성** <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76770608-939c0680-67e1-11ea-9ca9-3d70a768e3e3.png)
+
+<br><br>
+
+2\. **Mapper 파일 생성** <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76770705-af9fa800-67e1-11ea-9931-f0c6115b579e.png)
+
+<br><br>
+
+![image](https://user-images.githubusercontent.com/51431766/76770795-ce9e3a00-67e1-11ea-9f47-4644dffd56db.png)
+
+<br><br>
+
+3\. **Mapper 파일 생성** <br>
+
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.sample.service.impl.SampleMapper">
+
+	<resultMap type="sample" id="sampleResult">
+		<id property="id" column="ID"/>
+		<result property="title" column="TITLE"/>
+		<result property="regUser" column="REG_USER"/>
+		<result property="content" column="CONTENT"/>
+		<result property="regDate" column="REG_DATE"/>
+	</resultMap>
+	
+	<insert id="insertSample">
+		INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) 
+		VALUES (
+		  #{id}
+		  , #{title}
+		  , #{regUser}
+		  , #{content}
+		  , SYSDATE
+		)		
+	</insert>
+
+	<update id="updateSample">
+		UPDATE SAMPLE
+		SET 
+			TITLE = #{title}
+			, REG_USER = #{regUser}
+			, CONTENT = #{content}
+		WHERE ID = #{id}
+	</update>
+
+	<delete id="deleteSample">
+		DELETE FROM SAMPLE
+		WHERE ID = #{id}
+	</delete>
+	
+	<select id="selectSample" resultMap="sampleResult">
+		SELECT 
+			ID
+			, TITLE
+			, REG_USER
+			, CONTENT
+			, REG_DATE
+		FROM 
+			SAMPLE
+		WHERE 
+			ID = #{id}
+	</select>
+
+	<select id="selectSampleList" resultMap="sampleResult">
+		SELECT 
+			ID
+			, TITLE
+			, REG_USER
+			, CONTENT
+			, REG_DATE
+		FROM
+			SAMPLE
+		ORDER BY
+			ID DESC
+	</select>
+
+</mapper>
+```
+
+<br>
+
+mapper 루트 엘리먼트 내에서 namespace를 선언한다. 이 namespace는 나중에 DAO 클래스의 메소드를 구현할 때, SQL Mapper의 등록된 SQL 의 아이디를 식별하는데 사용된다(?).
+
+더 자세한 내용은 https://mybatis.org/mybatis-3/ko/getting-started.html 에서 ctrl+f 를 눌러서 찾아보자.
+
+<br>
+
+
+\<select\> 에서 parameterType  속성은 생략가능하며, 대개 생략한다.
+
+\<select\> 에서 resultType은 MyBatis에서 선언한 별칭(Alias) 를 사용할 수 있으며, resultMap의 id값을 할당할
+수도 있다.
+
+<br>
+
+---
+
+:busstop:  잠시 \<resultMap\> 앨리머트에 대해서 알아 보자
+
+MyBatis를 통해서 얻은 검색결과를 자바의 객체와 매핑할 때, 가끔 실제 테이블의 컬럼이름과 객체의 프로퍼티의
+이름이 다른 경우가 많다. 이러면 자바 객체로의 매핑이 되지 않는다.
+
+그래서 이런 경우에는 resultMap을 사용하면 된다.
+
+---
+
+
+---
+
+### 참고) insert - selectKey 에 대하여...
+
+\<insert\> 는 가끔 insert 이후에 그 PK를 필요로 할 때가 있다.
+
+ex) [ PK 값 ] 방이 개설되었습니다 (알림)
+
+이런 경우네는 다음과 같이 작성한다.
+
+```xml
+<insert id="insertSample">
+    <selectKey keyProperty="id" resultType="int" order="BEFORE">
+        SELECT SAMPLE_SEQ.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO SAMPLE(ID, TITLE, REG_USER, CONTENT, REG_DATE) 
+    VALUES (
+    #{id}
+    , #{title}
+    , #{regUser}
+    , #{content}
+    , SYSDATE
+    )		
+</insert>
+```
+
+
+
+\<selectKey\> 를 좀 더 세부적으로 보자.
+
+
+
+#### keyProperty 
+
+ insert에서의 ParameterType(생략되어 있지만 SampleVO이다) 로 주어진 객체의 프로퍼티와 같은 이름의 
+
+프로퍼티를 준다. 이러면 SampleVO에서 setter( setId(int id) )를 통해서 SampleVO에 생성된 
+
+<code> SELECT SAMPLE_SEQ.NEXTVAL FROM DUAL </code> 의 값을 넣어준다.
+
+(실수! 현재 SampleVO의 id는 String값이다. 위의 내용은 그저 예시이므로 int로 표현했다.) 
+
+
+
+#### resultType
+
+resultType 은 SampleVO에서 id프로퍼티와 같은 자료형을 써주면 된다.
+
+다만 주의할 점이 있다.
+
+자바에서 SampleVO의 id가 int가 아니라  String 이였으면, resultType 의 값으로는 **string**이다.
+
+잘 보면 첫자가 소문자다. 이런 것들을 주의하기 바란다.
+
+
+
+#### order="BEFORE"
+
+insert를 사용하기 직전에 수행해달라는 뜻이다.
+
+생략하면  BEFORE 자동 설정.
+
+---
+
+<br><br><br>
+
+### 스프링 설정 추가하기
+
+<br>
+
+1\. **스프링 빈 설정 파일 생성 및 작성** <br>
+
+![image](https://user-images.githubusercontent.com/51431766/76772004-897b0780-67e3-11ea-97ed-ab339043f80e.png)
+
+<br><br>
+
+
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="configLocation" value="classpath:/egovframework/sqlmap/sql-mapper-config.xml"/>
+		<property name="mapperLocations" value="classpath:/egovframework/sqlmap/mappers/*_SQL.xml"/>
+	</bean>
+</beans>
+```
+
+<br>
+
+SqlSessionFactoryBean에 반드시 세가지 정보를 DI 해줘야한다. <br>
+1. dataSource
+2. MyBatis 메인 설정 파일의 위치
+3. SQL Mapper 파일들의 위치
+
+<br><br>
+
+
+
+<br><br>
