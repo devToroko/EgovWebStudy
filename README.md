@@ -6685,6 +6685,291 @@ SqlSessionFactoryBean에 반드시 세가지 정보를 DI 해줘야한다. <br>
 
 <br><br>
 
+### DAO 클래스 구현
 
+<br>
+
+전자정부프레임워크에서 사용하는 방법은 크게 2가지가 있다. <br><br>
+
+### 1번째 DAO 구현 방법 
+
+<br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.rte.psl.dataaccess.EgovAbstractMapper;
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+@Repository("daoMyBatis")
+public class SampleDAOMyBatis extends EgovAbstractMapper implements SampleDAO {
+
+	public SampleDAOMyBatis() {
+		System.out.println("===> SampleDAOMyBatis 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 insertSample() 기능처리");
+		insert("insertSample",vo);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 updateSample() 기능처리");
+		update("updateSample",vo);
+	}
+
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 deleteSample() 기능처리");
+		delete("deleteSample",vo);
+	}
+	
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 selectSample() 기능처리");
+		return (SampleVO) selectOne("selectSample", vo);
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 selectSampleList() 기능처리");
+		return selectList("selectSampleList",vo);
+	}
+}
+```
 
 <br><br>
+
+가장 편한 방법으로 EgovAbstractMapper 클래스를 상속받는 것이다. 그리고 CRUD 기능의 메소드를 <br>
+insert(), update(), delete(), selectOne(), selectList() 메소드를 이용하여 구현하면된다.<br><br>
+
+SampleServiceImpl 클래스도 @Resource(name=)을 수정해준다. <br>
+
+```java
+@Service("sampleService")
+public class SampleServiceImpl extends EgovAbstractServiceImpl implements SampleService {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SampleServiceImpl.class);
+	
+	@Resource(name="daoMyBatis")
+	private SampleDAO sampleDAO;
+	
+	@Resource(name="egovIdGnrService")
+	private EgovIdGnrService egovIdGnrService;
+	
+	// ~ 생략 ~
+}
+```
+
+<br><br>
+
+
+### 2번째 DAO 구현 방법  - Mapper 인터페이스 사용
+
+<br>
+
+1\. **Mapper 인터페이스 만들기** <br>
+
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import egovframework.rte.psl.dataaccess.mapper.Mapper;
+import egovframework.sample.service.SampleVO;
+
+@Mapper("sampleMapper")
+public interface SampleMapper {
+	
+	public void insertSample(SampleVO vo) throws Exception;
+	
+	public void updateSample(SampleVO vo) throws Exception;
+	
+	public void deleteSample(SampleVO vo) throws Exception;
+	
+	public SampleVO selectSample(SampleVO vo) throws Exception;
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception;
+	
+}
+```
+
+<br>
+
+@Mapper는 표준프레임워크의 어노테이션이며, 내부에 @Component를 상속하고 있어서 Scan으로 잡힌다. <br>
+
+@Mapper의 의미는 SQL Mapper 와 연결된다는 것이며, @Mapper의 id를 이용해 실제 DAO를 생성한다. <br><br>
+
+
+2\. **MapperConfigurer 등록** <br>
+
+context-mapper.xml 에 가서 MapperConfigurer 클래스를 등록한다.<br>
+
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="configLocation"
+                  value="classpath:/egovframework/sqlmap/sql-map-config.xml" />
+		<property name="mapperLocations" 
+                  value="classpath:/egovframework/sqlmap/mappers/*_SQL.xml"></property>
+	</bean>
+    
+	<bean class="egovframework.rte.psl.dataaccess.mapper.MapperConfigurer">
+		<property name="basePackage" value="egovframework.sample.service.impl" />
+	</bean>
+</beans>
+```
+
+<br>
+
+여기서 MapperConfigurer 는 비록 전자정부프레임워크의 패키지 이름이 보이지만, <br>
+
+내용물을 보면 org.mybatis.spring.mapper.MapperScannerConfigurer 를 상속한다. <br>
+
+사실상 MyBatis 공식 스캐너를 쓰는 거나 마찬가지다. <br>
+
+내용을 더 깊숙히 찾아보면... <br><br>
+
+
+
+```java
+@Override
+  public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+    if (this.processPropertyPlaceHolders) {
+      processPropertyPlaceHolders();
+    }
+
+    ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
+    scanner.setAddToConfig(this.addToConfig);
+    scanner.setAnnotationClass(this.annotationClass);
+    scanner.setMarkerInterface(this.markerInterface);
+    scanner.setSqlSessionFactory(this.sqlSessionFactory);
+    scanner.setSqlSessionTemplate(this.sqlSessionTemplate);
+    scanner.setSqlSessionFactoryBeanName(this.sqlSessionFactoryBeanName);
+    scanner.setSqlSessionTemplateBeanName(this.sqlSessionTemplateBeanName);
+    scanner.setResourceLoader(this.applicationContext);
+    scanner.setBeanNameGenerator(this.nameGenerator);
+    scanner.registerFilters();
+    scanner.scan(StringUtils.tokenizeToStringArray( 
+        this.basePackage, // 이거다!
+        ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS));
+        // [ ,; \t\n ] 이 delimiter로 등록되어 있다
+  }
+```
+
+<br>
+
+계속 심층 분석을 해보니 저 scanner.scan 은  ClassPathBeanDefinitionScanner 라는 것에서 온 것이고 <br>
+
+그리고 그 위에 설명을 보면 다음과 같은 설명이 있다, <br><br>
+
+```java
+/**
+ * A bean definition scanner that detects bean candidates on the classpath,
+ * registering corresponding bean definitions with a given registry ({@code BeanFactory}
+ * or {@code ApplicationContext}).
+ *
+ * <p>Candidate classes are detected through configurable type filters. The
+ * default filters include classes that are annotated with Spring's
+ * {@link org.springframework.stereotype.Component @Component},
+ * {@link org.springframework.stereotype.Repository @Repository},
+ * {@link org.springframework.stereotype.Service @Service}, or
+ * {@link org.springframework.stereotype.Controller @Controller} stereotype.
+ *
+ * <p>Also supports Java EE 6's {@link javax.annotation.ManagedBean} and
+ * JSR-330's {@link javax.inject.Named} annotations, if available.
+ *
+ * @author Mark Fisher
+ * @author Juergen Hoeller
+ * @author Chris Beams
+ * @since 2.5
+ * @see AnnotationConfigApplicationContext#scan
+ * @see org.springframework.stereotype.Component
+ * @see org.springframework.stereotype.Repository
+ * @see org.springframework.stereotype.Service
+ * @see org.springframework.stereotype.Controller
+ */
+```
+<br>
+
+여기서 볼 것은 바로 스캔하는 어노테이션 후보이다.<br>
+
+@Component, @Repository, @Service, @Controller 이다.<br>
+
+현재 전자정부프레임워크가 제공하는 @Mapper 어노테이션은 @Component를 상속하므로 스캔에 잡힌다.<br><br>
+
+
+
+그리고 basePackage 프로퍼티에 "egovframework.sample.service.impl" 를 줬으므로.<br>
+
+해당 패키지 및 하위 패키지까지 스캔을 할 것이다.<br><br>
+
+3\. **SampleDAOMyBatis 수정** <br><br>
+
+```java
+package egovframework.sample.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Repository;
+
+import egovframework.rte.psl.dataaccess.EgovAbstractMapper;
+import egovframework.sample.service.SampleDAO;
+import egovframework.sample.service.SampleVO;
+
+//extends EgovAbstractMapper
+
+@Repository("daoMyBatis")
+public class SampleDAOMyBatis  implements SampleDAO {
+
+	@Resource(name="sampleMapper")
+	private SampleMapper mybatis;
+	
+	public SampleDAOMyBatis() {
+		System.out.println("===> SampleDAOMyBatis 생성");
+	}
+
+	public void insertSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 insertSample() 기능처리");
+		//insert("insertSample",vo);
+		mybatis.insertSample(vo);
+	}
+	
+	public void updateSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 updateSample() 기능처리");
+		//update("updateSample",vo);
+		mybatis.updateSample(vo);
+	}
+
+	public void deleteSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 deleteSample() 기능처리");
+		//delete("deleteSample",vo);
+		mybatis.deleteSample(vo);
+	}
+	
+	public SampleVO selectSample(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 selectSample() 기능처리");
+		//return (SampleVO) selectOne("selectSample", vo);
+		return mybatis.selectSample(vo);
+	}
+	
+	public List<SampleVO> selectSampleList(SampleVO vo) throws Exception {
+		System.out.println("===> MyBatis로 selectSampleList() 기능처리");
+		//return selectList("selectSampleList",vo);
+		return mybatis.selectSampleList(vo);
+	}
+}
+```
+<br><br>
+
