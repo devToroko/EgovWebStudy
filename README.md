@@ -6568,7 +6568,7 @@ mapper 루트 엘리먼트 내에서 namespace를 선언한다. 이 namespace는
 
 \<select\> 에서 parameterType  속성은 생략가능하며, 대개 생략한다.
 
-\<select\> 에서 resultType은 MyBatis에서 선언한 별칭(Alias) 를 사용할 수 있으며, resultMap의 id값을 할당할
+\<select\> 에서 resultType은 MyBatis에서 선언한 별칭(Alias) 를 사용할 수 있으며, resultMap을 사용할 수도 있다.
 수도 있다.
 
 <br>
