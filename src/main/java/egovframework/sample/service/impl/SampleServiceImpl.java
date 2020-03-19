@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import egovframework.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -15,9 +17,9 @@ import egovframework.sample.service.SampleVO;
 @Service("sampleService")
 public class SampleServiceImpl extends EgovAbstractServiceImpl implements SampleService {
 	
-	//private static final Logger LOGGER = LoggerFactory.getLogger(SampleServiceImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SampleServiceImpl.class);
 	
-	@Resource(name="daoSpring")
+	@Resource(name="daoMyBatis")
 	private SampleDAO sampleDAO;
 	
 	@Resource(name="egovIdGnrService")
